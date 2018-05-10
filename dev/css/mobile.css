@@ -1,0 +1,85 @@
+body,html {
+    margin: 0%;
+}
+html{
+	min-height: 100%;
+}
+body > * {
+    padding: 9px 30px;
+}
+.partA {
+    background: linear-gradient( rgb(182, 205, 255) 0px, rgb(230, 244, 255) 118px, rgb(60, 80, 38) 120px, hsl(34, 51%, 25%) 137px, hsl(34, 45%, 25%) 161px, hsl(34, 6%, 51%) 171px) no-repeat;
+}
+.partB{
+	background: linear-gradient(hsla(33, 82%, 7%, 0.49), hsla(33, 82%, 7%, 0.49)), url(../img/rockywall.png);
+    /* opacity: 0.3; */
+    position: absolute;
+    width: -webkit-fill-available;
+    height: 100%;
+    z-index: -1;
+}
+a.menuitem {
+    text-decoration: none;
+    color: darkgrey;
+    font-size: 20pt;
+    white-space: nowrap;
+    text-shadow: 1px 1px 1px black;
+    padding: 0px 1.5%;
+}
+section#header {    
+	height: 120px;
+}
+span.webheadline {
+    box-shadow: -1px 0px 15px #dbe1ec;
+    border-radius: 100%;
+    display: inline-block;
+    font-size: 30pt;
+	min-width: 300px;
+    text-align: center;
+    background-color: rgba(245, 245, 245, 0.35);
+    color: #dae6f5;
+    text-shadow: 1px 1px 1px #a1b7e4, -1px -1px 1px #a1b7e4;
+}
+section#menu > * {
+    text-align: center;
+}
+span.webflags {
+	box-shadow: 1px 1px 1px grey;
+    float: right;
+    position: absolute;
+    right: 20px;
+}
+.help>.text{
+	display: none;
+}
+.help>.text.tooltip {
+    display: inline-block;
+    position: absolute;
+    min-width: 293px;
+    width: 25%;
+    max-width: 400px;
+    top: -12px;
+    right: 5%;
+    background: #97b4d2;
+    box-shadow: 4px 4px 6px #97b4d2, -4px -4px 6px #97b4d2;
+    border-radius: 35%;
+    /* min-height: 67px; */
+    padding: 15px 23px;
+}
+span.webmotto {
+    color: hsla(0, 0%, 94%, 1);
+    text-shadow: 1px 1px 1px hsla(220, 55%, 64%, 1), -1px -1px 0px hsla(220, 55%, 68%, 1);
+    white-space: nowrap;
+}	
+.webmotto {
+    display: inline-block;
+    position: absolute;
+    left: 10px;
+    font-size: 16pt;
+    top: 85px;
+    font-family: Georgia, serif;
+}
+/*articles*/
+.invisible{
+	display: none;
+}

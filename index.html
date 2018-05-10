@@ -9,32 +9,32 @@
 		<!-- bootstrap
 		<link rel="stylesheet" href="./dev/bootstrap/css/bootstrap.min.css"> -->
 		<!-- custom -->
-		<link rel="stylesheet" href="./dev/css/base.css" />
+		<link rel="stylesheet" href="./dev/css/mobile.css" />
+		<link rel="stylesheet" href="./dev/css/desktop.css" />
 		<script type="text/javascript" src="./dev/js/utils.js"></script>
 		<script type="text/javascript" src="./dev/js/index.js"></script>
 		<script type="text/javascript" src="./dev/js/localization.js"></script>
 	</head>
-	<body>
-		<!-- this div is absolutely positioned in order for text to be not transparent -->
-		<div>
-		<!-- Header -->
-		<section id="header">
-			<span class="webheadline"></span>
-			<span class="webmotto"></span>
-			<span class="webflags">
-			</span>
-		</section>
-
-		<!-- One -->
-		<section id="menu">
-			<div class="websection"></div>
-		</section>
-		<!-- Four -->
+	<body>	
+		<!-- perhaps "div"s are used to separate DOM structure as a "syntactically" for the developer's purposes whereas "section"s are to do it semantically-->
+		<div class="partA">
+			<section id="header">
+				<span class="webheadline"></span>
+				<span class="webmotto"></span>
+				<span class="webflags">
+				</span>
+			</section>
+			<section id="menu">
+				<div class="websection"></div>
+			</section>
+		</div>
+		<div class="partB">
+			<!-- this part gets a transparent background -->
+		</div>
+		<div class="partC">
 			<section id="content">
 				<div class="webcontent"></div>
 			</section>
-
-		<!-- Footer -->
 			<section id="footer">
 				<a href="https://wisedove.updog.co/index.html">online article</a>
 			</section>
