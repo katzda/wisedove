@@ -1,45 +1,63 @@
-/*Page object*/
-function Page(){
-	var pageInitializer = new PageInitializer();
-	/**	provides convenient methods because allows me to register page types in multiple groups **/
-	function PageInitializer(){
-		var types = {};
-		this.CreateType = function(fn,data,selector,multiSelect){
-			return function(){
-				fn(data,selector,multiSelect);
-			};
-		}
-		this.AddPageGroup = function(gname,pageType){
-			if(typeof types[gname] == "undefined"){
-				types[gname] = [];
-			}
-			var length = types[gname].length;
-			types[gname][length] = pageType;
-		}
-		this.ReloadGroup = function(gname){
-			types[gname].forEach(function(elem){
-				elem();
-			});
-		}
-	}
-	var that = this;
-	this.RegisterWebPart = function(idName,selector){
-		that[idName] = function(){
-			return document.querySelector(selector);
-		}
-	}
-	this.RegisterFunciton = function(fname,fn,sdata){
-		that[fname] = function(ddata){return fn(ddata,sdata);};
-	}
-	this.AddPageGroup = function(gname,pageType){
-		pageInitializer.AddPageGroup(gname,pageType);
-	}
-	this.ReloadGroup = function(gname){
-		pageInitializer.ReloadGroup(gname);
-	}
-	this.CreateType = function(fn,data,selector,multiSelect){
-		return pageInitializer.CreateType(fn,data,selector,multiSelect);
-	}
+
+function insertAfter(el, referenceNode) {
+    referenceNode.parentNode.insertBefore(el, referenceNode.nextSibling);
+}
+
+function insertBefore(el, referenceNode) {
+    referenceNode.parentNode.insertBefore(el, referenceNode);
+}
+
+location.URLParams = function() {
+  var qso = {};
+  var qs = document.location.search;
+  // Check for an empty querystring
+  if (qs == "") {
+    return qso;
+  }
+  // Normalize the querystring
+  qs = qs.replace(/(^\?)/, '').replace(/;/g, '&');
+  while (qs.indexOf("&&") != -1) {
+    qs = qs.replace(/&&/g, '&');
+  }
+  qs = qs.replace(/([\&]+$)/, '');
+  // Break the querystring into parts
+  qs = qs.split("&");
+  // Build the querystring object
+  for (var i = 0; i < qs.length; i++) {
+    var qi = qs[i].split("=");
+    qi = qi.map(function(n) {
+      return decodeURIComponent(n)
+    });
+    if (typeof qi[1] === "undefined") {
+      qi[1] = null;
+    }
+    if (typeof qso[qi[0]] !== "undefined") {
+
+      // If a key already exists then make this an object
+      if (typeof (qso[qi[0]]) == "string") {
+        var temp = qso[qi[0]];
+        if (qi[1] == "") {
+          qi[1] = null;
+        }
+        qso[qi[0]] = [];
+        qso[qi[0]].push(temp);
+        qso[qi[0]].push(qi[1]);
+
+      } else if (typeof (qso[qi[0]]) == "object") {
+        if (qi[1] == "") {
+          qi[1] = null;
+        }
+        qso[qi[0]].push(qi[1]);
+      }
+    } else {
+      // If no key exists just set it as a string
+      if (qi[1] == "") {
+        qi[1] = null;
+      }
+      qso[qi[0]] = qi[1];
+    }
+  }
+  return qso;
 }
 
 function CookieHandler(){

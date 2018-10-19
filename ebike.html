@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>eBike design</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/jpg" href="./dev/img/favicon.png">
+		<script src="./dev/js/jquery.js"></script>
+		<!-- bootstrap
+		<link rel="stylesheet" href="./dev/bootstrap/css/bootstrap.min.css"> -->
+		<!-- custom -->
+		<script type="text/javascript" src="./dev/js/utils.js"></script>
+		<script type="text/javascript" src="./dev/js/ebike.js"></script>
+	</head>
+	<body>	
+		<table class="RPMtoKMH">
+			<tr><td colspan="3">Convert rpm to km/h</td></tr>
+			<tr><td><label for="inputRPM">rpm:</label></td><td><input type="text" id="inputRPM"/></td><td></td></tr>
+			<tr><td><label for="inputINCH">diameter:</label></td><td><input type="text" id="inputINCH"/></td><td>[inches]</td></tr>
+			<tr><td>Speed: </td><td id="resultSpeed"></td><td><select id="speed"><option value="0.621371">[mph]</option><option value="1.0">[kph]</option></select></td></tr>
+			<tr><td colspan="3"><input id="calcSpeedBtn" type="submit" onclick="CalcRPMtoKMH(this);" value="Calculate"></input></td></tr>
+		</table>
+		<table class="KMHtoRPM">
+			<tr><td colspan="3">Convert km/h to rpm</td></tr>
+			<tr><td><label for="inputRPM">Max speed:</label></td><td><input type="text" id="inputKMH"/></td><td><select id="speed"><option value="1609.34">[mph]</option><option value="1000">[kph]</option></select></td></tr>
+			<tr><td><label for="inputINCH">diameter:</label></td><td><input type="text" id="inputINCH"/></td><td>[inches]</td></tr>
+			<tr><td>RPM: </td><td id="resultRPM"></td><td></td></tr>
+			<tr><td colspan="3"><input id="calcSpeedBtn" type="submit" onclick="CalcKMHtoRPM(this);" value="Calculate"></input></td></tr>
+		</table>
+		<table class="web_ruler">
+			<tr><td colspan="3">Calibration</td></tr>
+			<tr><td>Paper Size:</td><td><select id="inNumberPaperSize" onchange="ReDraw()">
+											<option value="A2" selected="selected">A2</option>
+											<option value="A3">A3</option>
+											<option value="A4">A4</option>
+										 </select></td><td></td></tr>
+			<tr><td>Screen width:</td><td><input type="number" id="inNumberScreenWidth" value="382.1" onchange="ReDraw()" step="0.01"/></td><td>[mm] *</td></tr>
+			<tr><td>Screen height:</td><td><input type="number" id="inNumberScreenHeight" value="215.15" onchange="ReDraw()" step="0.01"/></td><td>[mm] *</td></tr>
+			<tr><td>Printer margin:</td><td><input type="number" id="inNumberPrinMargin" value="15" onchange="ReDraw()" step="0.1"/></td><td>[mm] *</td></tr>
+			<tr><td colspan="3">* for the XY screen rulers precision</td></tr>
+		</table>
+		<table class="battery_design">
+			<tr><td colspan="3">Triangular Batery Design</td></tr>
+			<tr><td><label for="inFloatDiameter">Cell Diameter:</label></td><td><input type="number" id="inFloatDiameter" value="18.5" step="0.1" onchange="ReDraw()"/></td><td>[mm]</td></tr>
+			<tr><td>Cell Voltage:</td><td><input type="number" id="inFloatVoltage" value="3.7" step="0.1" onchange="ReDraw()"/></td><td>[V]</td></tr>
+			<tr><td>Cell Capacity:</td><td><input type="number" id="inFloatCapacity" value="3.5" step="0.1" onchange="ReDraw()"/></td><td>[Ah]</td></tr>
+			<tr><td><label for="inNumberOffset">X offset:</label></td><td><input type="number" id="inNumberOffset" value="17" onchange="ReDraw()"/></td><td>[mm]</td></tr>
+			<tr><td><label for="inNumberBatteryXLimit">X limit:</label></td><td><input type="number" id="inNumberBatteryXLimit" value="268" onchange="ReDraw()"/></td><td>[mm]</td></tr>
+			<tr><td><label for="inNumberSpacing">Spacing:</label></td><td><input type="number" id="inNumberSpacing" value="0" onchange="ReDraw()" step="0.01"/></td><td>[mm]</td></tr>
+			<tr><td><label for="inTextAngle">Frame angle:</label></td><td><input type="number" id="inNumberAngle" value="40" onchange="ReDraw()" step="0.1"/></td><td>[°]</td></tr>
+			<tr><td><label for="inNumberParallel">Parallel cells count:</label></td><td><input type="number" id="inNumberParallel" value="21" onchange="ReDraw()"/></td><td></td></tr>
+			<tr><td><label for="inNumberSerial">Serial cells count:</label></td><td><input type="number" id="inNumberSerial" value="7" onchange="ReDraw()"/></td><td></td></tr>
+		</table>
+		<div class="results">
+		<span id="downloadLinks">
+		</span>
+		<span id="helpPrinting">
+			<ol>
+				<li>Download the A4 picture that you need to print.</li>
+				<li>Right click on the file and select <i>Edit</i> to open it in <i>Microsoft Paint</i>.</li>
+				<li>Open <b>File</b> -> <b>Print</b> -> <b>Page Setup</b> and set: <br />
+					- Orientation to <i>Portrait</i><br />
+					- Left, Top, Right, Bottom margins to zero<br />
+					- Scaling: Fit to: 1 by 1
+				</li>
+				<li>Confirm and then go to Printer settings (File -> Print -> Print -> Preferences) and make sure the printer will not do its own fancy bits like poster printing, 2 pages per sheet, zooming to 150%, etc. but that it prints a single page normally.</li>
+				<li>Print the picture, do NOT close the Paint yet.</li>
+				<li>If the print came out as expected, but the cm on the ruler are slightly shorter or longer than how they are in reality, place the sheet in front of the monitor, line up the top horizontal ruler with the one you see in the Paint.<br/>
+				- If the width of the image in Paint is wider then the printed width, you need to increase the <i>Printer margin</i> in <i>Calibration</i> table, and vice-versa.<br/>
+				- Keep downloading the A4 image and comparing it on the screen with the printed version until the widths match exactly. The rulers may still be scaled differently but the overall width of the printed version and the width of the picture in Paint are the same.<br/>
+				- Then print your final design.<br/>
+				</li>
+			</ol>
+		</span>
+		</div>
+		<canvas id="canvasBatteryDesign"></canvas>
+		<style>
+			table {
+				display: inline-block;
+				vertical-align: top;
+			}
+			table.battery_design {
+				position: sticky;
+				top: 0px;
+				right: 0px;
+			}
+			tr:first-child{
+				font-weight: bold;
+			}
+			tr:not(:first-child)>td:first-child {
+				text-align: right;
+			}
+			#resultSpeed,#resultRPM{
+				color: red;
+			}
+			input[type="submit"]{
+				width: 100%;
+			}
+			div.results>span{
+				display: inline-block;
+				vertical-align: top;
+			}
+			ul,ol{
+				margin: 0px;
+			}
+		</style>
+		<script>
+			document.onload = Start();
+		</script>
+	</body>
+</html>
