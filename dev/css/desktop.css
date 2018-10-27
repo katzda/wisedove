@@ -1,6 +1,5 @@
 @media only screen and (min-width: 800px) {
 	body,html {
-		font-size: 26px;
 	}
 	
 	.webheadline {
@@ -27,5 +26,9 @@
 	}
 	.webheadline:after {
 		height: 85px;
+	}
+	
+	.article{
+		padding: 15px;
 	}
 }

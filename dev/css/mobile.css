@@ -1,16 +1,47 @@
-body,html {
+body, html {
     margin: 0%;
-	font-size: 20px;
+    min-height: 100vh;
+    height: 100%;
+    color: #404040;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 21px;
+    text-shadow: 1px 1px 0px black;
 }
-html{
-	min-height: 100%;
+*:not(a) {
+    cursor: default;
+}
+h1 {
+    margin-top: auto;
+}
+.partA {
+    position: sticky;
+    top: -106px;
+    z-index: 2;
 }
 .partB{
-	background: linear-gradient(hsla(33, 82%, 7%, 0.49), hsla(33, 82%, 7%, 0.49)), url(../img/rockywall.png);
-    position: absolute;
+	background: linear-gradient(hsla(0, 6%, 35%, 0.72),hsla(0, 6%, 35%, 0.72)), url(../img/rockywall.png);
+    position: relative;
     width: -webkit-fill-available;
     min-height: 100%;
-    z-index: -1;
+	/*
+    top: -27px;
+    padding: 0px 0px 1px;
+	*/
+}
+.partC {
+    background: linear-gradient(hsl(0, 3%, 51%) 0px,hsla(30, 65%, 64%, 0.85) 15px, rgba(255, 63, 0, 0)),url(../img/lava.png);
+    position: relative;
+    top: -27px;
+    min-height: 70px;
+}
+section#header {    
+    background: linear-gradient( rgb(182, 205, 255) 0px, rgb(230, 244, 255) 100%);
+	height: 100px;
+}
+section#menu{
+	background: linear-gradient(rgb(230, 244, 255) 0px, rgb(60, 80, 38) 5px, hsla(34, 50%, 36%, 0.77) 37px, hsl(34, 26%, 29%) 95%, hsl(0, 3%, 50%) 100%);
+	height:60px;
+    text-align: center;
 }
 a.menuitem {
     text-decoration: none;
@@ -22,15 +53,16 @@ a.menuitem {
 }
 a.menuitem.selected{
 	color: #5c6e04;
+    font-size: 40px;
+    padding: 0px;
 }
-section#header {    
-    background: linear-gradient( rgb(182, 205, 255) 0px, rgb(230, 244, 255) 100%);
-	height: 100px;
+
+.article a {
+    color: darkgoldenrod;
+    text-shadow: 1px 1px 1px black;
 }
-section#menu{
-	background: linear-gradient(rgb(230, 244, 255) 0px, rgb(60, 80, 38) 6px, hsl(34, 51%, 25%) 15px, hsl(34, 45%, 25%) 80%, hsl(34, 6%, 51%) 100%);
-	height:60px;
-    text-align: center;
+.article{
+	padding: 8px;
 }
 .categories {
     padding-top: 10px;

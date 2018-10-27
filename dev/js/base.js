@@ -1,93 +1,384 @@
-document.onload = Start();
-function Start(){
-	Localization.GetLanguage();
-	window.webpage = new Page();
-	window.webpage.ReCreatePage();
+/*version 2.2*/
+document.onload = Configure();
+function Configure(){	
+	window.page = new WiseDove();
+	Server.AddWebPart("Change",page.ChangeWebTitle,Content.GetSectionRef(page.GetSectionID()));
+	Server.AddWebPart("Change",page.ChangeWebMotto,["WebMotto",0,1,10,20],".webmotto",true);
+	Server.AddWebPart("Change",page.ChangeWebHeadline,Localization.WebHeadline,".webheadline");
+	Server.AddWebPart("Change",page.ReCreateListOfSections,Localization.Languages,"menu");
+	Server.AddWebPart("Change",page.GetMainPageContent,null,".partB");
+	Server.AddWebPart("CreatePage",page.StartWebMotto,["WebMotto",0,1,10000,20000],".webmotto");
+	Server.AddWebPart("CreatePage",page.ReCreateWebflags,Localization.Languages,".webflags");
+	Server.AddWebPart("CreatePage",page.ReCreateListOfSections,Localization.Languages,"menu");
+	Server.AddWebPart("CreatePage",page.GetMainPageContent,null,".partB");
+	Server.AddWebPart("CreatePage",page.ChangeWebHeadline,Localization.WebHeadline,".webheadline");
+	Server.AddWebPart("CreatePage",page.HideOnlineArticleLink,null,"#footer>a");
+	
+	Content.SetSectionShown(Content["4_Muslims"],false);
 }
 
-function GotoArticle(){
-	function DoLoad(file){
+/*User handler*/
+function SetExclusivelyCheckboxHandler(isChecked){
+	page.SetExclusively(isChecked);
+	Server.RunGroup('Change');
+}
+function SetLanguageSelectHandler(languageID){
+	page.SetLanguage(languageID);
+	Server.RunGroup('Change');
+}
+
+function WiseDove(){
+	var that = this;
+	this.ReCreateListOfSections = function(data,selector){
+		var menuItems = document.getElementsByClassName("menuitem");	/*Seach for menu items (sections)*/
+		if(menuItems.length == 0 /*If they've not been created yet*/){
+			menuItems = [];
+			var elem = document.getElementById(selector);
+			elem.innerHTML = "";
+			var sectionNames = document.createElement("div");
+			sectionNames.classList.add("categories");
+			var scrollPointArea = document.createElement("div");
+			scrollPointArea.classList.add("scrollarea");
+			for(var i=0 ; i<Content.Sections.length; i++){
+				if(!Content.IsSectionShown(i)) continue;
+				var alink = document.createElement("a");
+				var scrollPoint = document.createElement("span");
+				scrollPoint.classList.add("point");
+				//scrollPoint.setAttribute("onclick","FocusOnSection("+i+");");
+				alink.classList.add("menuitem");
+				menuItems[menuItems.length] = alink;
+				alink.setAttribute("href",location.origin + location.pathname + "?s="+i);
+				alink.setAttribute("id","sec"+i);
+				alink.innerHTML =  Localization[Content.Sections[i].RefName][page.GetSelectedLanguageID()];
+				sectionNames.appendChild(alink);
+				scrollPointArea.appendChild(scrollPoint);
+			}
+			elem.appendChild(sectionNames);
+			elem.appendChild(scrollPointArea);
+		}else{
+			for(var i=0 ; i<menuItems.length; i++){
+				if(!Content.IsSectionShown(i)) continue;
+				menuItems[i].innerHTML = Localization[Content.Sections[i].RefName][page.GetSelectedLanguageID()];
+			}
+		}
+	}
+	this.ChangeWebTitle = function(data,selector){
+		var elem = document.getElementsByTagName("title")[0];
+		elem.innerHTML = Localization[data.RefName][page.GetSelectedLanguageID()];
+	}
+	this.ChangeWebHeadline = function(data,selector){
+		var elem = document.querySelector(selector);
+		elem.innerHTML = "";
+		var a = document.createElement("a");
+		a.setAttribute("href",location.origin + location.pathname);
+		a.innerHTML = Localization.WebHeadline[page.GetSelectedLanguageID()];
+		elem.appendChild(a);
+	}
+	var stopWebMotto = false;
+	this.StopWebMotto = function(){
+		stopWebMotto = true;
+	}
+	this.StartWebMotto = function(data,selector){
+		stopWebMotto = false;
+		that.ChangeWebMotto(data,selector);
+	}
+	this.ChangeWebMotto = function(data,selector,skip){
+		skip = skip || false;
+		var elem = document.querySelector(selector);
+		var numberRef = parseInt(Math.round(data[1]+Math.random()*(data[2]-data[1])));
+		if(numberRef < 100){
+			if(numberRef < 10){
+				numberRef = "00"+numberRef;
+			}else{
+				numberRef = "0"+numberRef;
+			}
+		}
+		var textRef = data[0]+numberRef;
+		elem.innerHTML = Localization[textRef][page.GetSelectedLanguageID()];
+		if(!stopWebMotto && !skip){
+			setTimeout(that.ChangeWebMotto,data[3]+Math.random()*(data[4]-data[3]),data,selector);
+		}
+	}
+	this.ReCreateWebflags = function(data,selector){
+		var langFlags = document.querySelectorAll(".webflags label[for='exclChbox'],.webflags span.text");	/*Seach for menu items (sections)*/
+		if(langFlags.length == 0 /*If they've not been created yet*/){
+			langFlags = [];
+			var elem = document.querySelector(selector);
+			elem.innerHTML = "";
+			var spanLang = document.createElement("span");
+			var spanSel = document.createElement("span");
+			var sel = document.createElement("select");
+			sel.setAttribute("onchange","SetLanguageSelectHandler(this.options[this.selectedIndex].value);");
+			spanLang.classList.add("lang");
+			spanLang.innerHTML = "+";
+			spanLang.setAttribute("onclick","page.ToggleLangBar(this);");
+			spanSel.classList.add("sel");
+			spanSel.appendChild(sel);
+			spanSel.hidden = true;
+			elem.appendChild(spanLang);
+			elem.appendChild(spanSel);
+			for(var languageID=0; languageID<page.GetNumberOfLanguages(); languageID++){
+				var opt = document.createElement("option");
+				opt.setAttribute("value",languageID);
+				opt.innerHTML = data[languageID];
+				sel.appendChild(opt);			
+				if(page.GetSelectedLanguageID() == languageID){
+					opt.selected = true;
+				}
+			}
+			var lbl = document.createElement("label");
+			var chckbox = document.createElement("input");
+			var spanHelp = document.createElement("span");
+			var spanIcon = document.createElement("span");
+			var spanText = document.createElement("span");
+			var spanChboxLabel = document.createElement("span");
+			spanChboxLabel.appendChild(chckbox);
+			spanChboxLabel.appendChild(lbl);
+			spanChboxLabel.classList.add("checkbox_exclusive");
+			spanSel.appendChild(spanChboxLabel);
+			spanHelp.classList.add("help");
+			spanIcon.classList.add("icon");
+			spanText.classList.add("text");
+			spanHelp.appendChild(spanText);
+			spanHelp.appendChild(spanIcon);
+			spanSel.appendChild(spanHelp);
+			lbl.setAttribute("for","exclChbox");
+			spanIcon.innerHTML = "?";
+			chckbox.setAttribute("type","checkbox");
+			chckbox.setAttribute("id","exclChbox");
+			chckbox.setAttribute("onclick","SetExclusivelyCheckboxHandler(this.checked);");
+			var ex = page.GetExclusively();
+			chckbox.checked = ex;
+			
+			langFlags[0] = lbl;
+			langFlags[1] = spanText;
+			spanIcon.addEventListener("mouseover",function(obj){
+				spanText.classList.add("tooltip");
+			});			
+			spanIcon.addEventListener("mouseleave",function(obj){
+				spanText.classList.remove("tooltip");
+			});
+		}
+		langFlags[0].innerHTML = Localization.ExclLangChck[page.GetSelectedLanguageID()];
+		langFlags[1].innerHTML = Localization.ExclLangHelp[page.GetSelectedLanguageID()];
+	}			//flags
+	this.SetExclusively = function(bool_exclusively){
+		var date = new Date();
+		date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
+		Server.Cookie.Set("langExclusively",bool_exclusively.toString(),date);
+		page.Exclusively = bool_exclusively;
+	}
+	this.GetExclusively = function(){
+		if(isNaN(page.Exclusively) || page.Exclusively==null){
+			var cv = Server.Cookie.Get("langExclusively");
+			if (cv === "") {
+				page.SetExclusively(true);
+			}else{
+				page.Exclusively = cv.toLowerCase() === "true";
+			}
+		}
+		return page.Exclusively;
+	}
+	this.SetLanguage = function(id_lang){
+		id_lang = Number.parseInt(id_lang);
+		if(!isNaN(id_lang)){
+			var date = new Date();
+			date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
+			Server.Cookie.Set("language",id_lang,date);
+			page.Selected = id_lang;
+		}
+	}
+	this.GetSelectedLanguageID = function(){
+		if(isNaN(page.Selected)){
+			page.Selected = Number.parseInt(Server.Cookie.Get("language"));
+			if (isNaN(page.Selected)) {
+				page.SetLanguage(0);
+			}
+		}
+		return page.Selected;
+	},
+	this.ToggleLangBar = function(elem){
+		var sel = document.querySelector(".webflags>.sel");
+			sel.hidden = !sel.hidden;
+		if (sel.hidden) {
+			elem.innerHTML = "+";
+		} else {
+			elem.innerHTML = "-";
+		}
+	}
+	this.HideOnlineArticleLink = function(data, selector){
+		if(location.host != "localhost"){
+			document.querySelector(selector).hidden = true;
+		}
+	},
+	this.URLParams = function() {
+		var qso = {};
+		var qs = document.location.search;
+		// Check for an empty querystring
+		if (qs == "") {
+			return qso;
+		}
+		// Normalize the querystring
+		qs = qs.replace(/(^\?)/, '').replace(/;/g, '&');
+		while (qs.indexOf("&&") != -1) {
+			qs = qs.replace(/&&/g, '&');
+		}
+		qs = qs.replace(/([\&]+$)/, '');
+		// Break the querystring into parts
+		qs = qs.split("&");
+		// Build the querystring object
+		for (var i = 0; i < qs.length; i++) {
+			var qi = qs[i].split("=");
+			qi = qi.map(function(n) {return decodeURIComponent(n)});
+			if (typeof qi[1] === "undefined") {
+				qi[1] = null;
+			}
+			if (typeof qso[qi[0]] !== "undefined") {
+				// If a key already exists then make this an object
+				if (typeof (qso[qi[0]]) == "string") {
+					var temp = qso[qi[0]];
+					if (qi[1] == "") {
+					qi[1] = null;
+					}
+					qso[qi[0]] = [];
+					qso[qi[0]].push(temp);
+					qso[qi[0]].push(qi[1]);
+				} else {
+					if (typeof (qso[qi[0]]) == "object") {
+						if (qi[1] == "") {qi[1] = null;}
+						qso[qi[0]].push(qi[1]);
+					}
+				}
+			} else {// If no key exists just set it as a string
+				if (qi[1] == "") {
+					qi[1] = null;
+				}
+				qso[qi[0]] = qi[1];
+			}
+		}
+		return qso;
+	}
+	/*Only extracts the number from URL: e.g. ?s=1*/
+	this.GetSectionID = function(){
+		var p = this.URLParams();
+		var sectionID = Number.parseInt(p.s);
+		if(isNaN(sectionID)){
+			return 0;
+		}else{
+			return sectionID;
+		}
+	}
+	/*Only extracts the number from URL: e.g. ?a=1*/
+	this.GetSectionArticleID = function(){
+		return Number.parseInt(this.URLParams().a);
+	}
+	this.GetMainPageContent = function(data,contentSelector){
+		var exists = document.querySelector(contentSelector).innerHTML="";
+		var sectionID = page.GetSectionID();
+		var articleID = page.GetSectionArticleID();
+		var leadOnly = isNaN(articleID);
+		var allArticleIDs = leadOnly ? [...Array(Content.GetNoArticles(sectionID))].map((i,o) => o) : [articleID];
+		var fileExtension = leadOnly ? "_lead.html" : ".html";
+		var sectionID = that.GetSectionID();
+		var file;
+		/**/
+		var sel = document.querySelector(".categories>.selected");
+		if(!!sel){
+			sel.classList.remove("selected");
+		}
+		sel = document.getElementById("sec"+sectionID);
+		if(!!sel){
+			sel.classList.add("selected");
+		}
+		allArticleIDs.forEach(function(articleID){
+			if(Content.IsTranslationExists(sectionID,articleID)){
+				file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetSelectedLanguageRefName() + fileExtension;
+				LoadFile(RenderContent,leadOnly,file,sectionID,articleID,page.GetSelectedLanguageID(),contentSelector);
+			}else{
+				if(!page.GetExclusively()){
+					for(var languageID=0; languageID<page.GetNumberOfLanguages(); languageID++){
+						var selectedLanguageID = page.GetSelectedLanguageID();
+						if(languageID != selectedLanguageID){
+							if(Content.IsTranslationExists(sectionID,articleID,languageID)){
+								file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetLanguageRefName(languageID) + fileExtension;
+								LoadFile(RenderContent,leadOnly,file,sectionID,articleID,languageID,contentSelector);
+								break;
+							}
+						}
+					}
+				}
+			}
+		});
+		function RenderContent(txt,leadOnly,sectionID,articleID,languageID,contentSelector){
+			var elem = document.querySelector(contentSelector);
+			var divArticle = document.createElement("div");
+			divArticle.classList.add("article");
+			var id = sectionID + "_" + articleID + "_" + page.GetLanguageRefName(languageID);
+			divArticle.setAttribute("id",articleID);
+			var divLead = document.createElement("div");
+			divLead.classList.add("content");
+			var check;
+			var index = 0;
+			while(index < txt.length){
+				check = txt.length;
+				/*weird stuff happening*/
+				divLead.appendChild(txt[index]);
+				if(check == txt.length){
+					index++;
+				}
+			}
+			if(leadOnly){
+				var h1 = document.createElement("h1");
+				h1.appendChild(Content.GenerateLink(sectionID,articleID,languageID));
+				divArticle.appendChild(h1);
+			}
+			divArticle.appendChild(divLead);
+			var index = elem.BinaryInsert(divArticle,function(A,B){
+				/*comparator*/
+				var iA = Number.parseInt(A.id.split("_")[1]);
+				var iB = Number.parseInt(B.id.split("_")[1]);
+				if(iA<iB) return 1; else if(iA==iB) return 0; else return -1;
+			});
+			console.log(Array.from(elem.children).toString(function(child){
+				return child.id;
+			}));
+		}
+	}
+	function LoadFile(callbackRenderContent,leadOnly,file,sectionID,articleID,languageID,contentSelector){
 		var xhttp = new XMLHttpRequest();
+		function PrepareResponse(response){
+			/*prepairing the content*/
+			var lead = document.createElement("p");
+			lead.innerHTML = response;
+			if(lead.childElementCount == 0){
+				lead = [];
+				lead[0] = response;
+			}else{
+				lead = lead.children;
+			}
+			return lead;
+		}
 		xhttp.onreadystatechange = function(obj) {
 			if (this.readyState == 4 && this.status == 200) {
-				/*prepairing the content*/
-				var article = document.createElement("p");
-				article.innerHTML = this.responseText;
-				if(article.childElementCount == 0){
-					article = [];
-					article[0] = this.responseText;
-				}else{
-					article = article.children;
-				}
-				/*creating other DOM elements - the root article node*/
-				var divArticle = document.createElement("div");
-				divArticle.classList.add("article");
-				var _tmp = obj.srcElement.responseURL.split(document.location.origin+"/")[1].split("/");
-				var ID = _tmp[_tmp.length-1].split(".")[0];
-				var articleId = _tmp[_tmp.length-2] + "_" + ID;
-				divArticle.setAttribute("id",articleId);
-				/*creating other DOM elements - the lead*/
-				var divLead = document.createElement("div");
-				divLead.classList.add("lead");
-				var alink = document.createElement("a");
-				var h1 = document.createElement("h1");
-				alink.setAttribute("onclick","javascript:webpage.SelectArticle(this);");
-				alink.setAttribute("href","javascript:void(0);");
-				/*creating other DOM elements - the rest*/
-				var divRest = document.createElement("div");
-				divRest.classList.add("content");
-				divRest.classList.add("invisible");
-				/*appending*/
-				divArticle.appendChild(divLead);
-				divArticle.appendChild(divRest);
-				divLead.appendChild(h1);
-				h1.appendChild(alink);
-				alink.innerHTML = article[0].innerText;
-				while((article.length > 1) && (article[1].tagName != "HR")){
-					divLead.appendChild(article[1]);
-				}
-				/*appending the rest*/			
-				while(article.length > 1){
-					divRest.appendChild(article[1]);
-				}
-				var index = elem.BinaryInsert(divArticle,function(A,B){
-					/*comparator*/
-					var iA = Number.parseInt(A.id.split("_")[1]);
-					var iB = Number.parseInt(B.id.split("_")[1]);
-					if(iA<iB) return -1; else if(iA==iB) return 0; else return 1;
-				});
-				console.log(Array.from(elem.children).toString(function(child){
-					return child.id;
-				}));
+				callbackRenderContent(PrepareResponse(this.responseText),leadOnly,sectionID,articleID,languageID,contentSelector);
 			}
 		};
 		xhttp.open("GET", file);
 		xhttp.send();
 	}
-}
+	
+	this.GetNumberOfLanguages = function(){
+		return Localization.Languages.length;
+	}
+	this.GetSelectedLanguageRefName = function(){
+		return Localization.Languages[page.GetSelectedLanguageID()];
+	}
+	this.GetLanguageRefName = function(languageID){
+		return Localization.Languages[languageID];
+	}
+};
+Server.RunGroup("CreatePage");
+
 //TODO: dont have to transform H1 when only the article is displayed, instead I can create a "back" button
 //TODO: fix single article loading on url request like this: ./?s=2&a=1
 //TODO: Make all links work in all articles
-
-function ToggleLangBar(elem){
-  var sel = document.querySelector(".webflags>.sel");
-  sel.hidden = !sel.hidden;
-  if(sel.hidden){
-     elem.innerHTML = "+";
-  }else{
-     elem.innerHTML = "-";
-  }
-}
-
-
-function HideOnlineArticleLink(){
-	if(location.host != "localhost"){
-		document.querySelector("#footer>a").hidden = true;
-	}
-}
-
-function ShowLinkNames(){
-	for(prop in Data[Settings][Articles]){
-		console.log(prop);
-	};
-}
