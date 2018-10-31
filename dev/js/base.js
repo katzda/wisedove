@@ -4,17 +4,19 @@ function Configure(){
 	window.page = new WiseDove();
 	Server.AddWebPart("Change",page.ChangeWebTitle,Content.GetSectionRef(page.GetSectionID()));
 	Server.AddWebPart("Change",page.ChangeWebMotto,["WebMotto",0,1,10,20],".webmotto",true);
-	Server.AddWebPart("Change",page.ChangeWebHeadline,Localization.WebHeadline,".webheadline");
+	Server.AddWebPart("Change",page.ChangeWebHeadline,"WebHeadline",".webheadline");
 	Server.AddWebPart("Change",page.ReCreateListOfSections,Localization.Languages,"menu");
 	Server.AddWebPart("Change",page.GetMainPageContent,null,".partB");
+	Server.AddWebPart("Change",page.ReCreateWebflags,Localization.Languages,".webflags");
 	Server.AddWebPart("CreatePage",page.StartWebMotto,["WebMotto",0,1,10000,20000],".webmotto");
 	Server.AddWebPart("CreatePage",page.ReCreateWebflags,Localization.Languages,".webflags");
 	Server.AddWebPart("CreatePage",page.ReCreateListOfSections,Localization.Languages,"menu");
 	Server.AddWebPart("CreatePage",page.GetMainPageContent,null,".partB");
-	Server.AddWebPart("CreatePage",page.ChangeWebHeadline,Localization.WebHeadline,".webheadline");
+	Server.AddWebPart("CreatePage",page.ChangeWebHeadline,"WebHeadline",".webheadline");
 	Server.AddWebPart("CreatePage",page.HideOnlineArticleLink,null,"#footer>a");
 	
 	Content.SetSectionShown(Content["4_Muslims"],false);
+	Content.SetArticleShown(Content["3_Krishna"],1,false);
 }
 
 /*User handler*/
@@ -29,9 +31,23 @@ function SetLanguageSelectHandler(languageID){
 
 function WiseDove(){
 	var that = this;
+	this.SectionIDs;
 	this.ReCreateListOfSections = function(data,selector){
 		var menuItems = document.getElementsByClassName("menuitem");	/*Seach for menu items (sections)*/
+		
+		function ContainsArticles(sectionID,translationID,exclusively){
+			if(!Content.GetSectionShown(sectionID)){ return false; }
+			for(var i=0; i<Content.Sections[sectionID].Articles.length; i++){
+				var translations = exclusively ? [Content.Sections[sectionID].Articles[i].Translations[translationID]] : 
+													Content.Sections[sectionID].Articles[i].Translations;
+				if(translations.reduce((acc,cur) => acc||cur)){
+					return true;
+				}
+			}
+			return false;
+		}
 		if(menuItems.length == 0 /*If they've not been created yet*/){
+			this.SectionIDs = [];
 			menuItems = [];
 			var elem = document.getElementById(selector);
 			elem.innerHTML = "";
@@ -40,7 +56,10 @@ function WiseDove(){
 			var scrollPointArea = document.createElement("div");
 			scrollPointArea.classList.add("scrollarea");
 			for(var i=0 ; i<Content.Sections.length; i++){
-				if(!Content.IsSectionShown(i)) continue;
+				if(!ContainsArticles(i,page.GetSelectedLanguageID(),page.GetExclusively())){continue;}
+				else{
+					SectionIDs[SectionIDs.length] = i;
+				}
 				var alink = document.createElement("a");
 				var scrollPoint = document.createElement("span");
 				scrollPoint.classList.add("point");
@@ -49,30 +68,30 @@ function WiseDove(){
 				menuItems[menuItems.length] = alink;
 				alink.setAttribute("href",location.origin + location.pathname + "?s="+i);
 				alink.setAttribute("id","sec"+i);
-				alink.innerHTML =  Localization[Content.Sections[i].RefName][page.GetSelectedLanguageID()];
 				sectionNames.appendChild(alink);
 				scrollPointArea.appendChild(scrollPoint);
 			}
 			elem.appendChild(sectionNames);
 			elem.appendChild(scrollPointArea);
-		}else{
-			for(var i=0 ; i<menuItems.length; i++){
-				if(!Content.IsSectionShown(i)) continue;
-				menuItems[i].innerHTML = Localization[Content.Sections[i].RefName][page.GetSelectedLanguageID()];
-			}
+		}
+		for(var i=0 ; i<SectionIDs.length; i++){
+			if(!ContainsArticles(SectionIDs[i],page.GetSelectedLanguageID(),page.GetExclusively())){continue;}
+			menuItems[i].innerHTML = Localization[Content.GetSectionRef(SectionIDs[i])][page.GetSelectedLanguageID()];
 		}
 	}
-	this.ChangeWebTitle = function(data,selector){
+	this.ChangeWebTitle = function(refName,selector){
 		var elem = document.getElementsByTagName("title")[0];
-		elem.innerHTML = Localization[data.RefName][page.GetSelectedLanguageID()];
+		elem.innerHTML = Localization[refName][page.GetSelectedLanguageID()];
 	}
-	this.ChangeWebHeadline = function(data,selector){
+	this.ChangeWebHeadline = function(refName,selector){
 		var elem = document.querySelector(selector);
-		elem.innerHTML = "";
-		var a = document.createElement("a");
-		a.setAttribute("href",location.origin + location.pathname);
-		a.innerHTML = Localization.WebHeadline[page.GetSelectedLanguageID()];
-		elem.appendChild(a);
+		var a = elem.querySelector("a");
+		if(!a){
+			a = document.createElement("a");
+			a.setAttribute("href",location.origin + location.pathname);
+			elem.appendChild(a);
+		}
+		a.innerHTML = Localization[refName][page.GetSelectedLanguageID()];
 	}
 	var stopWebMotto = false;
 	this.StopWebMotto = function(){
@@ -272,12 +291,43 @@ function WiseDove(){
 	this.GetSectionArticleID = function(){
 		return Number.parseInt(this.URLParams().a);
 	}
+	/*handles the loading icon*/
+	this.LoadingIcon = (function(){
+		this.ArticlesRemaining = 0;
+		function SetLoadingIcon(isEnabled){
+			if(isEnabled){
+				document.getElementsByTagName("html")[0].classList.add("loading");
+			}else{
+				document.getElementsByTagName("html")[0].classList.remove("loading");
+			}
+		}
+		this.Reset = function(){
+			this.ArticlesRemaining = 0;
+		}
+		this.AddLoadingAmount = function(integer){
+			this.ArticlesRemaining += integer;
+			console.log("amount"+ this.ArticlesRemaining);
+			if(this.ArticlesRemaining > 0){
+				SetLoadingIcon(true);
+			}
+		}
+		this.ReleaseLoadingAmount = function(integer){
+			this.ArticlesRemaining -= integer;
+			console.log("amount"+ this.ArticlesRemaining);
+			if(this.ArticlesRemaining == 0){
+				SetLoadingIcon(false);
+			}
+		}
+		return this;
+	})()
+
 	this.GetMainPageContent = function(data,contentSelector){
+		that.LoadingIcon.Reset();
 		var exists = document.querySelector(contentSelector).innerHTML="";
 		var sectionID = page.GetSectionID();
 		var articleID = page.GetSectionArticleID();
 		var leadOnly = isNaN(articleID);
-		var allArticleIDs = leadOnly ? [...Array(Content.GetNoArticles(sectionID))].map((i,o) => o) : [articleID];
+		var allArticleIDs = leadOnly ? [...Array(Content.GetNoArticles(sectionID))].map((i,o) => o) : [articleID];		
 		var fileExtension = leadOnly ? "_lead.html" : ".html";
 		var sectionID = that.GetSectionID();
 		var file;
@@ -291,7 +341,8 @@ function WiseDove(){
 			sel.classList.add("selected");
 		}
 		allArticleIDs.forEach(function(articleID){
-			if(Content.IsTranslationExists(sectionID,articleID)){
+			if(Content.GetTranslationExists(sectionID,articleID,page.GetSelectedLanguageID())){
+				that.LoadingIcon.AddLoadingAmount(1);
 				file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetSelectedLanguageRefName() + fileExtension;
 				LoadFile(RenderContent,leadOnly,file,sectionID,articleID,page.GetSelectedLanguageID(),contentSelector);
 			}else{
@@ -299,9 +350,10 @@ function WiseDove(){
 					for(var languageID=0; languageID<page.GetNumberOfLanguages(); languageID++){
 						var selectedLanguageID = page.GetSelectedLanguageID();
 						if(languageID != selectedLanguageID){
-							if(Content.IsTranslationExists(sectionID,articleID,languageID)){
+							if(Content.GetTranslationExists(sectionID,articleID,languageID)){
 								file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetLanguageRefName(languageID) + fileExtension;
 								LoadFile(RenderContent,leadOnly,file,sectionID,articleID,languageID,contentSelector);
+								that.LoadingIcon.AddLoadingAmount(1);
 								break;
 							}
 						}
@@ -310,6 +362,7 @@ function WiseDove(){
 			}
 		});
 		function RenderContent(txt,leadOnly,sectionID,articleID,languageID,contentSelector){
+			that.LoadingIcon.ReleaseLoadingAmount(1);
 			var elem = document.querySelector(contentSelector);
 			var divArticle = document.createElement("div");
 			divArticle.classList.add("article");
@@ -317,6 +370,9 @@ function WiseDove(){
 			divArticle.setAttribute("id",articleID);
 			var divLead = document.createElement("div");
 			divLead.classList.add("content");
+			if(leadOnly){
+				divLead.classList.add("lead");
+			}
 			var check;
 			var index = 0;
 			while(index < txt.length){
@@ -329,7 +385,31 @@ function WiseDove(){
 			}
 			if(leadOnly){
 				var h1 = document.createElement("h1");
+				var br = document.createElement("br");
+				var author = Content.GetArticleAuthor(sectionID,articleID);
+				var date = Content.GetArticleDate(sectionID,articleID);
+				var spanOtherInfo;
+				if(author || date){
+					spanOtherInfo = document.createElement("span");
+					spanOtherInfo.setAttribute("class","otherInfo");
+				}
+				if(author){
+					var spanAuthor = document.createElement("span");
+					spanAuthor.setAttribute("class","author");
+					spanAuthor.innerHTML = "Author: "+author;
+					spanOtherInfo.appendChild(spanAuthor);
+				}
+				if(date){
+					var spanDate = document.createElement("span");
+					spanDate.setAttribute("class","date");
+					spanDate.innerHTML = "Date: "+date;
+					spanOtherInfo.appendChild(spanDate);
+				}
 				h1.appendChild(Content.GenerateLink(sectionID,articleID,languageID));
+				h1.appendChild(br);
+				if(spanOtherInfo){
+					h1.appendChild(spanOtherInfo);
+				}
 				divArticle.appendChild(h1);
 			}
 			divArticle.appendChild(divLead);

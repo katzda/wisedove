@@ -108,7 +108,7 @@ Content = {...Content,
 		return len;
 	},
 	GetSectionRef : function(sectionID){
-		return Content.Sections[sectionID];
+		return Content.Sections[sectionID].RefName;
 	},
 	GetSectionID : function(sectionRefName){
 		return Content[sectionRefName];
@@ -118,8 +118,20 @@ Content = {...Content,
 			Content.Sections[sectionID].Show = show;
 		}
 	},
-	IsSectionShown : function(sectionID){
+	GetSectionShown : function(sectionID){
 		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Show : null;
+	},	
+	GetSectionEmpty : function(sectionID, translationID){
+		if(this.IndexIsCorrect(sectionID)){
+			for(var i=0; i<Content.Sections[sectionID].Articles.length ; i++){
+				if(Content.Sections[sectionID].Articles[i].Translations[translationID]){
+					return false;
+				}
+			}
+			return true;
+		}else{
+			return null;
+		}
 	},	
 	AddArticle : function(sectionID,articleRefName,translations,date,author,show){
 		translations = translations || [false,false];
@@ -141,9 +153,12 @@ Content = {...Content,
 	GetArticleRefName : function(sectionID,articleID){
 		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].RefName : null;
 	},
-	IsTranslationExists : function(sectionID,articleID,languageID){
-		languageID = languageID || page.GetSelectedLanguageID();
-		return this.Sections[sectionID].Articles[articleID].Translations[languageID];
+	GetTranslationExists : function(sectionID,articleID,translationID){
+		if(this.IndicesAreCorrect(sectionID,articleID,translationID)){
+			return this.Sections[sectionID].Articles[articleID].Translations[translationID];
+		}else{
+			return false;
+		}
 	},
 	GetArticleDate : function(sectionID,articleID){
 		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].Date : null;
@@ -156,7 +171,7 @@ Content = {...Content,
 			Content.Sections[sectionID].Articles[articleID].Show = show;
 		}
 	},
-	IsArticleShown : function(sectionID,articleID){
+	GetArticleShown : function(sectionID,articleID){
 		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Show : null;
 	},	
 	GetArticleName : function(sectionID,articleID,translationID){

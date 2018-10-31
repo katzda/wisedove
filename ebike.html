@@ -47,8 +47,8 @@
 			<tr><td><label for="inNumberOffset">X offset:</label></td><td><input type="number" id="inNumberOffset" value="17" onchange="ReDraw()"/></td><td>[mm]</td></tr>
 			<tr><td><label for="inNumberBatteryXLimit">X limit:</label></td><td><input type="number" id="inNumberBatteryXLimit" value="268" onchange="ReDraw()"/></td><td>[mm]</td></tr>
 			<tr><td><label for="inNumberSpacing">Spacing:</label></td><td><input type="number" id="inNumberSpacing" value="0" onchange="ReDraw()" step="0.01"/></td><td>[mm]</td></tr>
-			<tr><td><label for="inTextAngle">Frame angle:</label></td><td><input type="number" id="inNumberAngle" value="40" onchange="ReDraw()" step="0.1"/></td><td>[°]</td></tr>
-			<tr><td><label for="inNumberParallel">Parallel cells count:</label></td><td><input type="number" id="inNumberParallel" value="21" onchange="ReDraw()"/></td><td></td></tr>
+			<tr><td><label for="inTextAngle">Frame angle:</label></td><td><input type="number" id="inNumberAngle" value="39.1" onchange="ReDraw()" step="0.1"/></td><td>[°]</td></tr>
+			<tr><td><label for="inNumberParallel">Parallel cells count:</label></td><td><input type="number" id="inNumberParallel" value="20" onchange="ReDraw()"/></td><td></td></tr>
 			<tr><td><label for="inNumberSerial">Serial cells count:</label></td><td><input type="number" id="inNumberSerial" value="7" onchange="ReDraw()"/></td><td></td></tr>
 		</table>
 		<div class="results">
@@ -79,11 +79,6 @@
 				display: inline-block;
 				vertical-align: top;
 			}
-			table.battery_design {
-				position: sticky;
-				top: 0px;
-				right: 0px;
-			}
 			tr:first-child{
 				font-weight: bold;
 			}
@@ -102,6 +97,14 @@
 			}
 			ul,ol{
 				margin: 0px;
+			}
+			
+			@media only screen and (min-width: 600px) {
+				table.battery_design {
+					position: sticky;
+					top: 0px;
+					right: 0px;
+				}
 			}
 		</style>
 		<script>
