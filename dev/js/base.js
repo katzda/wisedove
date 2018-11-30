@@ -3,21 +3,26 @@ document.onload = Configure();
 function Configure(){	
 	window.page = new WiseDove();
 	Server.AddWebPart("Change",page.ChangeWebTitle,Content.GetSectionRef(page.GetSectionID()));
-	Server.AddWebPart("Change",page.ChangeWebMotto,["WebMotto",0,1,10,20],".webmotto",true);
+	Server.AddWebPart("Change",page.ChangeWebMotto,["WebMotto",0,Content["motto"]-1,10,20],".webmotto",true);
 	Server.AddWebPart("Change",page.ChangeWebHeadline,"WebHeadline",".webheadline");
 	Server.AddWebPart("Change",page.ReCreateListOfSections,Localization.Languages,"menu");
 	Server.AddWebPart("Change",page.GetMainPageContent,null,".partB");
 	Server.AddWebPart("Change",page.ReCreateWebflags,Localization.Languages,".webflags");
-	Server.AddWebPart("CreatePage",page.StartWebMotto,["WebMotto",0,1,10000,20000],".webmotto");
+	Server.AddWebPart("Change",page.UpdateLinks);
+	Server.AddWebPart("CreatePage",page.StartWebMotto,["WebMotto",0,Content["motto"]-1,10000,20000],".webmotto");
 	Server.AddWebPart("CreatePage",page.ReCreateWebflags,Localization.Languages,".webflags");
 	Server.AddWebPart("CreatePage",page.ReCreateListOfSections,Localization.Languages,"menu");
 	Server.AddWebPart("CreatePage",page.GetMainPageContent,null,".partB");
 	Server.AddWebPart("CreatePage",page.ChangeWebHeadline,"WebHeadline",".webheadline");
 	Server.AddWebPart("CreatePage",page.HideOnlineArticleLink,null,"#footer>a");
 	
-	Content.SetSectionShown(Content["4_Muslims"],false);
-	Content.SetArticleShown(Content["3_Krishna"],1,false);
+	Content.SetSectionDisabled(Content["4_Muslims"],false);
+	Content.SetArticleDisabled(Content["3_Krishna"],1,false);
+	
+	document.addEventListener("FileLoaded",page.UpdateLinks,false);
 }
+
+
 
 /*User handler*/
 function SetExclusivelyCheckboxHandler(isChecked){
@@ -31,23 +36,10 @@ function SetLanguageSelectHandler(languageID){
 
 function WiseDove(){
 	var that = this;
-	this.SectionIDs;
 	this.ReCreateListOfSections = function(data,selector){
-		var menuItems = document.getElementsByClassName("menuitem");	/*Seach for menu items (sections)*/
-		
-		function ContainsArticles(sectionID,translationID,exclusively){
-			if(!Content.GetSectionShown(sectionID)){ return false; }
-			for(var i=0; i<Content.Sections[sectionID].Articles.length; i++){
-				var translations = exclusively ? [Content.Sections[sectionID].Articles[i].Translations[translationID]] : 
-													Content.Sections[sectionID].Articles[i].Translations;
-				if(translations.reduce((acc,cur) => acc||cur)){
-					return true;
-				}
-			}
-			return false;
-		}
-		if(menuItems.length == 0 /*If they've not been created yet*/){
-			this.SectionIDs = [];
+		var menuItems = document.getElementsByClassName("menuitem");
+		var sections = Content.GetSections(page.GetSelectedLanguageID(),page.GetExclusively()).map((o,i) => ({"secID":Content.GetSectionID(o.RefName),...o}));
+		if(menuItems.length != sections.length){
 			menuItems = [];
 			var elem = document.getElementById(selector);
 			elem.innerHTML = "";
@@ -55,18 +47,15 @@ function WiseDove(){
 			sectionNames.classList.add("categories");
 			var scrollPointArea = document.createElement("div");
 			scrollPointArea.classList.add("scrollarea");
-			for(var i=0 ; i<Content.Sections.length; i++){
-				if(!ContainsArticles(i,page.GetSelectedLanguageID(),page.GetExclusively())){continue;}
-				else{
-					SectionIDs[SectionIDs.length] = i;
-				}
+			for(var i=0 ; i<sections.length; i++){
+				var secID = sections[i]["secID"];
 				var alink = document.createElement("a");
 				var scrollPoint = document.createElement("span");
 				scrollPoint.classList.add("point");
 				//scrollPoint.setAttribute("onclick","FocusOnSection("+i+");");
 				alink.classList.add("menuitem");
 				menuItems[menuItems.length] = alink;
-				alink.setAttribute("href",location.origin + location.pathname + "?s="+i);
+				alink.setAttribute("href",location.origin + location.pathname + "?s="+secID);
 				alink.setAttribute("id","sec"+i);
 				sectionNames.appendChild(alink);
 				scrollPointArea.appendChild(scrollPoint);
@@ -74,10 +63,24 @@ function WiseDove(){
 			elem.appendChild(sectionNames);
 			elem.appendChild(scrollPointArea);
 		}
-		for(var i=0 ; i<SectionIDs.length; i++){
-			if(!ContainsArticles(SectionIDs[i],page.GetSelectedLanguageID(),page.GetExclusively())){continue;}
-			menuItems[i].innerHTML = Localization[Content.GetSectionRef(SectionIDs[i])][page.GetSelectedLanguageID()];
+		for(var i=0 ; i<sections.length; i++){
+			menuItems[i].innerHTML = Localization[sections[i].RefName][page.GetSelectedLanguageID()];
 		}
+	}
+	this.UpdateLinks = function(){
+		document.querySelectorAll("span.link").forEach(function(elem){
+			var refname = elem.dataset["refname"];
+			var title = elem.dataset["title"];
+			var hash = elem.dataset["hash"];
+			var innerHTML = elem.dataset["innerHTML"];
+			if(typeof refname != "string"){
+				console.error(`Incorrect RefName: ${refname}`);
+			}else{
+				var link = Content.GenerateLink(refname,page.GetSelectedLanguageID(),title,hash,innerHTML);
+				elem.innerHTML = "";
+				elem.append(link);
+			}
+		});
 	}
 	this.ChangeWebTitle = function(refName,selector){
 		var elem = document.getElementsByTagName("title")[0];
@@ -102,6 +105,11 @@ function WiseDove(){
 		that.ChangeWebMotto(data,selector);
 	}
 	this.ChangeWebMotto = function(data,selector,skip){
+		/*example:
+			data: ['WebMotto',min_number,max_number] 
+			selector: ".webmotto"
+			skip : boolean
+		*/
 		skip = skip || false;
 		var elem = document.querySelector(selector);
 		var numberRef = parseInt(Math.round(data[1]+Math.random()*(data[2]-data[1])));
@@ -306,30 +314,50 @@ function WiseDove(){
 		}
 		this.AddLoadingAmount = function(integer){
 			this.ArticlesRemaining += integer;
-			console.log("amount"+ this.ArticlesRemaining);
 			if(this.ArticlesRemaining > 0){
 				SetLoadingIcon(true);
 			}
 		}
 		this.ReleaseLoadingAmount = function(integer){
 			this.ArticlesRemaining -= integer;
-			console.log("amount"+ this.ArticlesRemaining);
 			if(this.ArticlesRemaining == 0){
 				SetLoadingIcon(false);
 			}
 		}
 		return this;
-	})()
-
+	})();
+	this.GetArticleLanguage = function(sectionID,articleID, translationID,exclusively){
+		/*get the article langID of translationID. But if exclusively, select a different language*/
+		/*which different language do I choose, for now any one*/
+		var selLang = Content.Sections[sectionID].Articles[articleID].Translations.map((o,i)=>({"bool":o,"i":i})).filter((o,i) => ((exclusively && o["bool"] && i==translationID) || (!exclusively && o["bool"])));
+		if(selLang.length > 0){
+			return selLang[0]["i"];
+		}else{
+			console.warn(`No language found for articleID '${articleID}' in section '${sectionID}'!`);
+			return undefined;
+		}
+	}
 	this.GetMainPageContent = function(data,contentSelector){
 		that.LoadingIcon.Reset();
 		var exists = document.querySelector(contentSelector).innerHTML="";
 		var sectionID = page.GetSectionID();
 		var articleID = page.GetSectionArticleID();
-		var leadOnly = isNaN(articleID);
-		var allArticleIDs = leadOnly ? [...Array(Content.GetNoArticles(sectionID))].map((i,o) => o) : [articleID];		
-		var fileExtension = leadOnly ? "_lead.html" : ".html";
-		var sectionID = that.GetSectionID();
+		var onlyLeads = isNaN(articleID);
+		var allArticles = [];
+		var langID = page.GetSelectedLanguageID();
+		var excl = page.GetExclusively();
+		if(onlyLeads /*articleID is not defined*/){
+			allArticles = Content.GetArticles(sectionID,langID,excl).map(function(o,i){
+				var id = Content.GetArticleIDbyRef(o.RefName,sectionID);
+				return {
+					"articleID" : id,
+					"langID" : page.GetArticleLanguage(sectionID,id,langID,excl)
+				};
+			});
+		}else{
+			allArticles.push(articleID);
+		}
+		var fileExtension = onlyLeads ? "_lead.html" : ".html";
 		var file;
 		/**/
 		var sel = document.querySelector(".categories>.selected");
@@ -340,28 +368,16 @@ function WiseDove(){
 		if(!!sel){
 			sel.classList.add("selected");
 		}
-		allArticleIDs.forEach(function(articleID){
-			if(Content.GetTranslationExists(sectionID,articleID,page.GetSelectedLanguageID())){
-				that.LoadingIcon.AddLoadingAmount(1);
-				file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetSelectedLanguageRefName() + fileExtension;
-				LoadFile(RenderContent,leadOnly,file,sectionID,articleID,page.GetSelectedLanguageID(),contentSelector);
-			}else{
-				if(!page.GetExclusively()){
-					for(var languageID=0; languageID<page.GetNumberOfLanguages(); languageID++){
-						var selectedLanguageID = page.GetSelectedLanguageID();
-						if(languageID != selectedLanguageID){
-							if(Content.GetTranslationExists(sectionID,articleID,languageID)){
-								file = "./" + (sectionID+1) + "/" + (articleID+1) + "_" + page.GetLanguageRefName(languageID) + fileExtension;
-								LoadFile(RenderContent,leadOnly,file,sectionID,articleID,languageID,contentSelector);
-								that.LoadingIcon.AddLoadingAmount(1);
-								break;
-							}
-						}
-					}
-				}
-			}
+		allArticles.forEach(function(article){
+			that.LoadingIcon.AddLoadingAmount(1);
+			var secID = sectionID;
+			var artID = article["articleID"];
+			var langID = article["langID"];
+			var langTxt = page.GetLanguageRefName(langID);
+			file = "./" + (secID+1) + "/" + (artID+1) + "_" +langTxt + fileExtension;
+			LoadFile(RenderContent,onlyLeads,file,secID,artID,langID,contentSelector);
 		});
-		function RenderContent(txt,leadOnly,sectionID,articleID,languageID,contentSelector){
+		function RenderContent(txt,onlyLeads,sectionID,articleID,languageID,contentSelector){
 			that.LoadingIcon.ReleaseLoadingAmount(1);
 			var elem = document.querySelector(contentSelector);
 			var divArticle = document.createElement("div");
@@ -370,7 +386,7 @@ function WiseDove(){
 			divArticle.setAttribute("id",articleID);
 			var divLead = document.createElement("div");
 			divLead.classList.add("content");
-			if(leadOnly){
+			if(onlyLeads){
 				divLead.classList.add("lead");
 			}
 			var check;
@@ -383,7 +399,7 @@ function WiseDove(){
 					index++;
 				}
 			}
-			if(leadOnly){
+			if(onlyLeads){
 				var h1 = document.createElement("h1");
 				var br = document.createElement("br");
 				var author = Content.GetArticleAuthor(sectionID,articleID);
@@ -405,7 +421,7 @@ function WiseDove(){
 					spanDate.innerHTML = "Date: "+date;
 					spanOtherInfo.appendChild(spanDate);
 				}
-				h1.appendChild(Content.GenerateLink(sectionID,articleID,languageID));
+				h1.appendChild(Content.GetLink(sectionID,articleID,languageID));
 				h1.appendChild(br);
 				if(spanOtherInfo){
 					h1.appendChild(spanOtherInfo);
@@ -424,7 +440,7 @@ function WiseDove(){
 			}));
 		}
 	}
-	function LoadFile(callbackRenderContent,leadOnly,file,sectionID,articleID,languageID,contentSelector){
+	function LoadFile(callbackRenderContent,onlyLeads,file,sectionID,articleID,languageID,contentSelector){
 		var xhttp = new XMLHttpRequest();
 		function PrepareResponse(response){
 			/*prepairing the content*/
@@ -440,7 +456,8 @@ function WiseDove(){
 		}
 		xhttp.onreadystatechange = function(obj) {
 			if (this.readyState == 4 && this.status == 200) {
-				callbackRenderContent(PrepareResponse(this.responseText),leadOnly,sectionID,articleID,languageID,contentSelector);
+				callbackRenderContent(PrepareResponse(this.responseText),onlyLeads,sectionID,articleID,languageID,contentSelector);
+				document.dispatchEvent(new Event('FileLoaded'));
 			}
 		};
 		xhttp.open("GET", file);
@@ -450,8 +467,8 @@ function WiseDove(){
 	this.GetNumberOfLanguages = function(){
 		return Localization.Languages.length;
 	}
-	this.GetSelectedLanguageRefName = function(){
-		return Localization.Languages[page.GetSelectedLanguageID()];
+	this.GetLanguageRefName = function(languageID){
+		return Localization.Languages[languageID];
 	}
 	this.GetLanguageRefName = function(languageID){
 		return Localization.Languages[languageID];

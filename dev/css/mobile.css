@@ -107,10 +107,6 @@ a.menuitem.selected{
 }
 .webmotto {
     display: inline-block;
-    position: absolute;
-    left: 10px;
-    font-size: 12pt;
-    top: 80px;
     font-family: Georgia, serif;
     color: hsl(220, 87%, 81%);
 }
@@ -126,13 +122,6 @@ section#menu > * {
 	overflow-x: auto;
 }
 .webflags {
-    position: absolute;
-    right: 20px;
-    background: rgb(218, 233, 249);
-    border-radius: 100px;
-    z-index: 0;
-    width: 40px;
-    text-align: center;
 }
 .webflags>.sel {
     position: absolute;

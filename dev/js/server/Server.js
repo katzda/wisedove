@@ -41,8 +41,8 @@ var Localization = {
 	"Languages" : ["en","cz"],
 	"WebHeadline": ["About Christianity","O Křesťanství"],
 	"ExclLangChck": ["Exclusively","Výlučně"],
-	"ExclLangHelp": ["If there is no article in a section in the desired language but exists in others, you will see it in other language according to your choice.",
-						"Pokud v sekci neexistuje článek v požadovaném jazyku, ale existuje v jiných, uvidíte jej v jiném jazyku dle Vaší volby."],
+	"ExclLangHelp": ["If not ticked, all articles on the website will be listed but the selected language will be preffered if translation exists.",
+					"Pokud je volba 'Výhradně' nezaškrtnuta, uvidíte výpis všech článků webu, s tím že se upřednostní překlad (pokud existuje) ve zvoleném jazyku."],
 	/*sections*/
 	"0_Default": ["Wise Dove","Chytrá Holubice"],
 	"1_Intro": ["Intro","Úvod"],
@@ -50,8 +50,12 @@ var Localization = {
 	"3_Krishna": ["For Krishna People","Pro hare Krišny"],
 	"4_Muslims": ["For Muslims","Pro muslimy"],
 	"5_Nofaith": ["For Non Believers", "Pro nevěřící"],
-	"WebMotto000": ["Be wise as serpents and innocent as doves.","Buďte chytří jako hadi a bezelstní jako holubice."],
-	"WebMotto001": ["God loves a cheerful giver.","Ochotného dárce miluje Bůh"],
+	"WebMotto000": ["Back then, you all came close and stood at the foot of the mountain. The mountain was blazing with fire up to the sky, with darkness, cloud, and thick smoke!",
+					"Tenkrát jste se přiblížili a stáli pod horou. Hora planula ohněm až do samých nebes a kolem byla tma, oblak a mrákota."],
+	"WebMotto001": ["But if from there you seek the Lord your God, you will find him if you seek him with all your heart and with all your soul.",
+					"Odtamtud budete hledat Hospodina, svého Boha; nalezneš ho , budeš-li ho opravdu hledat celým svým srdcem a celou svou duší."],
+	"WebMotto002": ["For the Lord your God is a merciful God; he will not abandon or destroy you or forget the covenant with your ancestors, which he confirmed to them by oath.",
+					"Vždyť Hospodin, tvůj Bůh, je Bůh milosrdný, nenechá tě klesnout a nepřipustí tvou zkázu, nezapomene na smlouvu s tvými otci, kterou jim stvrdil přísahou."],
 	/*Articles*/
 	"Intro":["Introduction","Úvod"],
 	"Dating":["About Dating","O Chození"],
@@ -84,6 +88,7 @@ var Content = {
 		{RefName:"4_Muslims",Show:true,Articles:[{RefName:"ReligionMuslim",Show:true,Translations:[true,false],Date:2018,Author:"DKz"}]},
 		{RefName:"5_Nofaith",Show:true,Articles:[{RefName:"GoodNews",Show:true,Translations:[false,true],Date:2018,Author:"DKz"},{RefName:"ACell",Show:true,Translations:[false,true],Date:2018,Author:"DKz"},{RefName:"FaithIsChoice",Show:true,Translations:[true,true],Date:2017,Author:"DKz"},{RefName:"Coincidence",Show:true,Translations:[false,true],Date:2012,Author:"DKz"}]}
 	],
+	"motto" : 3,
 	"1_Intro": 0,
 	"2_Christ": 1,
 	"3_Krishna": 2,
@@ -107,22 +112,41 @@ Content = {...Content,
 		}
 		return len;
 	},
+	GetArticleByRef : function(ArticleRefName){
+		return Content.Sections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 )[0].
+				Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName);
+	},	
+	GetArticleByID : function(sectionID, articleID){
+		return Content.Sections[sectionID].Articles[articleID];
+	},
+	GetArticleIDbyRef : function(ArticleRefName, sectionID){
+		var searchedSections = typeof sectionID === undefined ? Content.Sections : [Content.Sections[sectionID]];
+		var exists = searchedSections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0];
+		if(exists !== undefined){
+			return exists.Articles.map((o,i) => ({"RefName":o.RefName,"index":i}) ).filter((o,i)=> o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName)[0].index;
+		}else{
+			return undefined;
+		}
+	},
+	GetSectionByArticleRef : function(ArticleRefName){
+		return Content.Sections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0];
+	},
 	GetSectionRef : function(sectionID){
 		return Content.Sections[sectionID].RefName;
 	},
 	GetSectionID : function(sectionRefName){
 		return Content[sectionRefName];
 	},
-	SetSectionShown : function(sectionID,show){
-		if(this.IndexIsCorrect(sectionID)){
+	SetSectionDisabled : function(sectionID,show){
+		if(this.IndicesAreCorrect(sectionID)){
 			Content.Sections[sectionID].Show = show;
 		}
 	},
-	GetSectionShown : function(sectionID){
-		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Show : null;
+	GetSectionDisabled : function(sectionID){
+		return this.IndicesAreCorrect(sectionID) ? Content.Sections[sectionID].Show : undefined;
 	},	
 	GetSectionEmpty : function(sectionID, translationID){
-		if(this.IndexIsCorrect(sectionID)){
+		if(this.IndicesAreCorrect(sectionID)){
 			for(var i=0; i<Content.Sections[sectionID].Articles.length ; i++){
 				if(Content.Sections[sectionID].Articles[i].Translations[translationID]){
 					return false;
@@ -130,7 +154,7 @@ Content = {...Content,
 			}
 			return true;
 		}else{
-			return null;
+			return undefined;
 		}
 	},	
 	AddArticle : function(sectionID,articleRefName,translations,date,author,show){
@@ -146,12 +170,47 @@ Content = {...Content,
 			Content.Sections[sectionID].Articles[len].Author = author;
 			Content.Sections[sectionID].Articles[len].Show = show;
 		}
+	},		
+	/**	exclusively shouldn't be here because this is a back-end structure but maybe it's more readable than having this functionality created externally (like a plugin function)
+		I can't have a general function GetSections without thise "exclusively" because this would get me articles that are not filtered out relevantly.**/
+	GetSections : function(translationID, exclusively){
+		if(exclusively === undefined){
+			console.error("Parameter 'Exclusively' not passed into GetSection(translationID,exclusively)");
+		}
+		return this.IndicesAreCorrect(undefined,undefined,translationID) ? 
+				Content.Sections.filter((o,i) => Content.GetNoArticles(i,translationID,exclusively) > 0) : 
+				undefined;
+	},		
+	/**	exclusively shouldn't be here because this is a back-end structure but maybe it's more readable than having this functionality created externally (like a plugin function)
+		I can't have a general function GetNoArticles without thise "exclusively" because this would get me articles that are not filtered out relevantly.**/
+	GetNoArticles : function(sectionID, translationID, exclusively){
+		return this.IndicesAreCorrect(sectionID,undefined,translationID) ? Content.Sections[sectionID].Articles.filter(function(o,i){
+			if(exclusively === undefined){
+				console.error("Parameter 'Exclusively' not passed into GetSection(translationID,exclusively)");
+			}
+			if(exclusively){
+				return o.Translations[translationID];
+			}else{
+				return o.Translations.reduce((acc,cur) => acc||cur);
+			}
+		}).length : undefined;
 	},
-	GetNoArticles : function(sectionID){
-		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Articles.length : null;
+	/**	exclusively shouldn't be here because this is a back-end structure but maybe it's more readable than having this functionality created externally (like a plugin function)
+		I can't have a general function GetArticles without thise "exclusively" because this would get me articles that are not filtered out relevantly.**/
+	GetArticles : function(sectionID, translationID, exclusively){
+		return this.IndicesAreCorrect(sectionID,undefined,translationID) ? Content.Sections[sectionID].Articles.filter(function(o,i){
+			if(exclusively === undefined){
+				console.error("Parameter 'Exclusively' not passed into GetSection(translationID,exclusively)");
+			}
+			if(exclusively){
+				return o.Translations[translationID];
+			}else{
+				return o.Translations.reduce((acc,cur) => acc||cur);
+			}
+		}) : undefined;
 	},
 	GetArticleRefName : function(sectionID,articleID){
-		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].RefName : null;
+		return this.IndicesAreCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].RefName : undefined;
 	},
 	GetTranslationExists : function(sectionID,articleID,translationID){
 		if(this.IndicesAreCorrect(sectionID,articleID,translationID)){
@@ -161,21 +220,21 @@ Content = {...Content,
 		}
 	},
 	GetArticleDate : function(sectionID,articleID){
-		return this.IndexIsCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].Date : null;
+		return this.IndicesAreCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].Date : undefined;
 	},
 	GetArticleAuthor : function(sectionID,articleID){
-		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Author : null;
+		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Author : undefined;
 	},
-	SetArticleShown : function(sectionID,articleID,show){
+	SetArticleDisabled : function(sectionID,articleID,show){
 		if(this.IndicesAreCorrect(sectionID,articleID)){
 			Content.Sections[sectionID].Articles[articleID].Show = show;
 		}
 	},
-	GetArticleShown : function(sectionID,articleID){
-		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Show : null;
+	GetArticleDisabled : function(sectionID,articleID){
+		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Show : undefined;
 	},	
 	GetArticleName : function(sectionID,articleID,translationID){
-		return this.IndicesAreCorrect(sectionID,articleID,translationID) ? Localization[Content.Sections[sectionID].Articles[articleID].RefName][translationID] : null;
+		return this.IndicesAreCorrect(sectionID,articleID,translationID) ? Localization[Content.Sections[sectionID].Articles[articleID].RefName][translationID] : undefined;
 	},
 	PrintSections : function(){
 		var Sections = Content.Sections;
@@ -185,23 +244,67 @@ Content = {...Content,
 		var Articles = Content.Sections[sectionID].Articles;
 		console.log({ Articles });
 	},
-	GenerateLink : function(sectionID,articleID,translationID){
+	GenerateLink : function(ArticleRefName,translationID,title,hash,innerHTML){
 		var link = document.createElement("a");
-		link.setAttribute("href",location.origin+location.pathname+"?s="+sectionID+"&a="+articleID);
-		link.innerHTML = this.GetArticleName(sectionID,articleID,translationID);
-		return link;
+		var sectionID = Content.GetSectionID(Content.GetSectionByArticleRef(ArticleRefName).RefName);
+		var articleID = Content.GetArticleIDbyRef(ArticleRefName);
+		if(typeof sectionID == "number" && typeof articleID == "number"){
+			return this.GetLink(sectionID,articleID,translationID,title,hash, innerHTML);
+		}else{
+			console.error("Incorrect sectionID or articleID");
+			return undefined;
+		}
 	},
-	IndexIsCorrect : function(sectionID){
-		return sectionID < Content.Sections.length;
+	GetLink : function(sectionID,articleID,translationID,title,hash,innerHTML){
+		var link = document.createElement("a");
+		var href = location.origin+location.pathname+"?s="+sectionID+"&a="+articleID;
+		if(!!hash){
+			href = href+"#"+hash;
+		}
+		if(!!title){
+			link.setAttribute("title",title);
+		}
+
+		link.setAttribute("href",href);
+		if(this.IndicesAreCorrect(sectionID,articleID,translationID)){		
+			link.innerHTML = "";
+			if(typeof innerHTML != "undefined"){
+				if(typeof innerHTML == "string"){
+					link.innerHTML = innerHTML;
+				}else{
+					/*this may perhaps fail but i'll do sth when it happens*/
+					link.appendChild(innerHTML);
+				}
+			}
+			if(link.innerHTML == ""){
+				link.innerHTML = this.GetArticleName(sectionID,articleID,translationID);
+			}
+		}else{
+			console.error(`Link not working! ${link}`);
+		}
+		return link;
 	},
 	IndicesAreCorrect : function(sectionID,articleID,translationID){
 		if(isNaN(translationID)){
-			return 	sectionID < Content.Sections.length && 
-					articleID < Content.Sections[sectionID].Articles.length;
+			if(isNaN(articleID)){
+				return sectionID < Content.Sections.length;
+			}else{
+				return 	sectionID < Content.Sections.length && 
+						articleID < Content.Sections[sectionID].Articles.length;
+			}
 		}else{
-			return 	sectionID < Content.Sections.length && 
-					articleID < Content.Sections[sectionID].Articles.length && 
-					translationID < Content.Sections[sectionID].Articles[articleID].Translations.length;
+			if(isNaN(articleID)){
+				if(isNaN(sectionID)){
+					return 	translationID < Content.Sections[0].Articles[0].Translations.length;
+				}else{
+					return 	sectionID < Content.Sections.length && 
+							translationID < Content.Sections[0].Articles[0].Translations.length;
+				}
+			}else{
+				return 	sectionID < Content.Sections.length && 
+						articleID < Content.Sections[sectionID].Articles.length && 
+						translationID < Content.Sections[sectionID].Articles[articleID].Translations.length;
+			}
 		}
 	}
 };
