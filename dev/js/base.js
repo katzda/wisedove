@@ -68,16 +68,29 @@ function WiseDove(){
 		}
 	}
 	this.UpdateLinks = function(){
-		document.querySelectorAll("span.link").forEach(function(elem){
+		document.querySelectorAll("span.link:not(.generated)").forEach(function(elem){
+			elem.classList.add("generated");
 			var refname = elem.dataset["refname"];
 			var title = elem.dataset["title"];
 			var hash = elem.dataset["hash"];
+			var target = elem.dataset["target"];
+			var langID = page.GetSelectedLanguageID();
+			var language = page.GetArticleLanguage(refname,langID,page.GetExclusively());
+			var warning;
+			if(typeof language === "undefined"){
+				var linkWarning = Localization["linkWarning"][page.GetSelectedLanguageID()];
+				linkWarning = linkWarning
+								.replace("$1",Localization[`LangName${langID}noun`][langID])
+								.replace("$2",Localization["ExclLangChck"][langID]);
+				title = (!!title ? (title) : "") + " " + linkWarning;
+			}
 			var innerHTML = elem.dataset["innerHTML"];
 			if(typeof refname != "string"){
-				console.error(`Incorrect RefName: ${refname}`);
+				console.error(`Incorrect link's RefName: ${refname}`);
 			}else{
-				var link = Content.GenerateLink(refname,page.GetSelectedLanguageID(),title,hash,innerHTML);
-				elem.innerHTML = "";
+				langID = page.GetArticleLanguage(refname, langID,false);
+				innerHTML = Content.GetArticleNameByRef(refname,langID);
+				var link = Content.GenerateLink(refname,langID,title,hash,innerHTML,target);
 				elem.append(link);
 			}
 		});
@@ -326,15 +339,23 @@ function WiseDove(){
 		}
 		return this;
 	})();
-	this.GetArticleLanguage = function(sectionID,articleID, translationID,exclusively){
+	this.GetArticleLanguage = function(refname, translationID,exclusively){
 		/*get the article langID of translationID. But if exclusively, select a different language*/
 		/*which different language do I choose, for now any one*/
+		var sectionID = Content.GetSectionIDByArticleRef(refname);
+		var articleID = Content.GetArticleIDbyRef(refname,sectionID);
 		var selLang = Content.Sections[sectionID].Articles[articleID].Translations.map((o,i)=>({"bool":o,"i":i})).filter((o,i) => ((exclusively && o["bool"] && i==translationID) || (!exclusively && o["bool"])));
-		if(selLang.length > 0){
-			return selLang[0]["i"];
+		var prefLang = selLang.getIndex({i:translationID},function(o1,o2){return o1["i"]==o2["i"]});
+		if(!isNaN(prefLang)){
+			return selLang[prefLang]["i"];
 		}else{
-			console.warn(`No language found for articleID '${articleID}' in section '${sectionID}'!`);
-			return undefined;
+			if(selLang.length > 0){
+				/*return the first other available - hey no priorities here!!!??*/
+				return selLang[0]["i"];
+			}else{
+				console.warn(`No language found for article ${articleID} in section ${sectionID}!`);
+				return undefined;
+			}
 		}
 	}
 	this.GetMainPageContent = function(data,contentSelector){
@@ -343,23 +364,17 @@ function WiseDove(){
 		var sectionID = page.GetSectionID();
 		var articleID = page.GetSectionArticleID();
 		var onlyLeads = isNaN(articleID);
-		var allArticles = [];
 		var langID = page.GetSelectedLanguageID();
 		var excl = page.GetExclusively();
-		if(onlyLeads /*articleID is not defined*/){
-			allArticles = Content.GetArticles(sectionID,langID,excl).map(function(o,i){
-				var id = Content.GetArticleIDbyRef(o.RefName,sectionID);
-				return {
-					"articleID" : id,
-					"langID" : page.GetArticleLanguage(sectionID,id,langID,excl)
-				};
-			});
-		}else{
-			allArticles.push(articleID);
-		}
+		var allArticles = onlyLeads /*true == articleID is not defined*/ 
+						? Content.GetArticles(sectionID,langID,excl).map(function(o,i){
+								var id = Content.GetArticleIDbyRef(o.RefName,sectionID);
+								return {"articleID" : id,"langID" : page.GetArticleLanguage(o.RefName,langID,excl)}; 
+							}) 	
+						: [{"articleID" : articleID,
+							"langID" : page.GetArticleLanguage(Content.GetArticleRefName(sectionID,articleID),langID,excl) 
+						}];
 		var fileExtension = onlyLeads ? "_lead.html" : ".html";
-		var file;
-		/**/
 		var sel = document.querySelector(".categories>.selected");
 		if(!!sel){
 			sel.classList.remove("selected");
@@ -369,61 +384,87 @@ function WiseDove(){
 			sel.classList.add("selected");
 		}
 		allArticles.forEach(function(article){
-			that.LoadingIcon.AddLoadingAmount(1);
-			var secID = sectionID;
-			var artID = article["articleID"];
 			var langID = article["langID"];
-			var langTxt = page.GetLanguageRefName(langID);
-			file = "./" + (secID+1) + "/" + (artID+1) + "_" +langTxt + fileExtension;
-			LoadFile(RenderContent,onlyLeads,file,secID,artID,langID,contentSelector);
+			if(typeof langID !== "undefined" /*if no language exists then do not try loading it*/){
+				that.LoadingIcon.AddLoadingAmount(1);
+				var artID = article["articleID"];
+				var langTxt = page.GetLanguageRefName(langID);
+				
+				var file = "./" + (sectionID+1) + "/" + (artID+1) + "_" +langTxt + fileExtension;
+				var data = [sectionID,artID,langID,onlyLeads,contentSelector];
+				LoadFile(file,RenderContent,data);
+			}
 		});
-		function RenderContent(txt,onlyLeads,sectionID,articleID,languageID,contentSelector){
+		function LoadFile(file,renderContentCallback,data){
+			var xhttp = new XMLHttpRequest();
+			function PrepareResponse(response){
+				/*prepairing the content*/
+				var lead = document.createElement("p");
+				lead.innerHTML = response;
+				if(lead.childElementCount == 0){
+					lead = [];
+					lead[0] = response;
+				}else{
+					lead = lead.children;
+				}
+				return lead;
+			}
+			xhttp.onreadystatechange = function(obj) {
+				if (this.readyState == 4 && this.status == 200) {
+					data.splice(0,0,PrepareResponse(this.responseText));
+					renderContentCallback(data);
+					document.dispatchEvent(new Event('FileLoaded'));
+				}
+			};
+			xhttp.open("GET", file);
+			xhttp.send();
+		}
+		function RenderContent(data){
+			var txt = data[0];			
+			var secID = data[1];		/*ID in the data structure Content*/
+			var artID = data[2];		/*ID in the data structure Content*/
+			var langID = data[3];		
+			var onlyLeads = data[4];	
+			var selector = data[5];		
 			that.LoadingIcon.ReleaseLoadingAmount(1);
-			var elem = document.querySelector(contentSelector);
+			var elem = document.querySelector(selector);
 			var divArticle = document.createElement("div");
 			divArticle.classList.add("article");
-			var id = sectionID + "_" + articleID + "_" + page.GetLanguageRefName(languageID);
-			divArticle.setAttribute("id",articleID);
+			var id = secID + "_" + artID + "_" + page.GetLanguageRefName(langID);
+			divArticle.setAttribute("id",artID);
 			var divLead = document.createElement("div");
-			divLead.classList.add("content");
-			if(onlyLeads){
-				divLead.classList.add("lead");
-			}
-			var check;
-			var index = 0;
-			while(index < txt.length){
-				check = txt.length;
-				/*weird stuff happening*/
-				divLead.appendChild(txt[index]);
-				if(check == txt.length){
-					index++;
-				}
+			divLead.classList.add((onlyLeads ? "lead" : "content"));
+			while(txt.length > 0){
+				divLead.appendChild(txt[0]);
 			}
 			if(onlyLeads){
 				var h1 = document.createElement("h1");
 				var br = document.createElement("br");
-				var author = Content.GetArticleAuthor(sectionID,articleID);
-				var date = Content.GetArticleDate(sectionID,articleID);
+				var author = Content.GetArticleAuthor(secID,artID);
+				var date = Content.GetArticleDate(secID,artID);
 				var spanOtherInfo;
 				if(author || date){
 					spanOtherInfo = document.createElement("span");
-					spanOtherInfo.setAttribute("class","otherInfo");
+					spanOtherInfo.setAttribute("class","meta");
 				}
 				if(author){
 					var spanAuthor = document.createElement("span");
 					spanAuthor.setAttribute("class","author");
-					spanAuthor.innerHTML = "Author: "+author;
+					spanAuthor.innerHTML = Localization["Author"][langID] + ": "+author;
 					spanOtherInfo.appendChild(spanAuthor);
 				}
 				if(date){
 					var spanDate = document.createElement("span");
 					spanDate.setAttribute("class","date");
-					spanDate.innerHTML = "Date: "+date;
+					spanDate.innerHTML = Localization["Date"][langID] + ": "+date;
 					spanOtherInfo.appendChild(spanDate);
 				}
-				h1.appendChild(Content.GetLink(sectionID,articleID,languageID));
-				h1.appendChild(br);
+				var titleLink = document.createElement("span");
+				titleLink.classList.add("link");
+				titleLink.dataset["refname"] = Content.GetArticleRefName(secID,artID);
+				h1.appendChild(titleLink);
 				if(spanOtherInfo){
+					h1.appendChild(document.createElement("br"));
 					h1.appendChild(spanOtherInfo);
 				}
 				divArticle.appendChild(h1);
@@ -440,29 +481,6 @@ function WiseDove(){
 			}));
 		}
 	}
-	function LoadFile(callbackRenderContent,onlyLeads,file,sectionID,articleID,languageID,contentSelector){
-		var xhttp = new XMLHttpRequest();
-		function PrepareResponse(response){
-			/*prepairing the content*/
-			var lead = document.createElement("p");
-			lead.innerHTML = response;
-			if(lead.childElementCount == 0){
-				lead = [];
-				lead[0] = response;
-			}else{
-				lead = lead.children;
-			}
-			return lead;
-		}
-		xhttp.onreadystatechange = function(obj) {
-			if (this.readyState == 4 && this.status == 200) {
-				callbackRenderContent(PrepareResponse(this.responseText),onlyLeads,sectionID,articleID,languageID,contentSelector);
-				document.dispatchEvent(new Event('FileLoaded'));
-			}
-		};
-		xhttp.open("GET", file);
-		xhttp.send();
-	}
 	
 	this.GetNumberOfLanguages = function(){
 		return Localization.Languages.length;
@@ -475,7 +493,3 @@ function WiseDove(){
 	}
 };
 Server.RunGroup("CreatePage");
-
-//TODO: dont have to transform H1 when only the article is displayed, instead I can create a "back" button
-//TODO: fix single article loading on url request like this: ./?s=2&a=1
-//TODO: Make all links work in all articles

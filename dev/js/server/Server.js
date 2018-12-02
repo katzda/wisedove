@@ -39,7 +39,18 @@ var Server = {
 var Localization = {
 	/*webparts*/
 	"Languages" : ["en","cz"],
-	"WebHeadline": ["About Christianity","O Křesťanství"],
+	"LangName0noun" : ["english","angličtina"],
+	"LangName1noun" : ["czech","čeština"],
+	"LangName0adjSHE" : ["english","anglická"],
+	"LangName0adjHE" : ["english","anglický"],
+	"LangName1adjSHE" : ["czech","česká"],
+	"LangName1adjHE" : ["czech","český"],
+	"Date" : ["Date","Datum"],
+	"Author" : ["Author","Autor"],
+	"linkWarning" : ["Note: This article has not been created in the $1 language! You may, however, try to unselect the $2 tickbox in settings.",
+					"Upozornění: Článek však nebyl vytvořen v jazyce '$1'! Může zkusit zrušit volbu '$2' v nastavení."],
+	"WebHeadline": ["Wise Dove","Chytrá Holubice"],
+	"TitleExplanation" : ["Be wise as serpents and innocent as doves.","Buďte chytří jako hadi a nevinní jako holubice."],
 	"ExclLangChck": ["Exclusively","Výlučně"],
 	"ExclLangHelp": ["If not ticked, all articles on the website will be listed but the selected language will be preffered if translation exists.",
 					"Pokud je volba 'Výhradně' nezaškrtnuta, uvidíte výpis všech článků webu, s tím že se upřednostní překlad (pokud existuje) ve zvoleném jazyku."],
@@ -120,8 +131,8 @@ Content = {...Content,
 		return Content.Sections[sectionID].Articles[articleID];
 	},
 	GetArticleIDbyRef : function(ArticleRefName, sectionID){
-		var searchedSections = typeof sectionID === undefined ? Content.Sections : [Content.Sections[sectionID]];
-		var exists = searchedSections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0];
+		var searchedSections = typeof sectionID === "undefined" ? Content.Sections : [Content.Sections[sectionID]];
+		var exists = searchedSections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName,searchedSections)[0];
 		if(exists !== undefined){
 			return exists.Articles.map((o,i) => ({"RefName":o.RefName,"index":i}) ).filter((o,i)=> o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName)[0].index;
 		}else{
@@ -130,6 +141,9 @@ Content = {...Content,
 	},
 	GetSectionByArticleRef : function(ArticleRefName){
 		return Content.Sections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0];
+	},
+	GetSectionIDByArticleRef : function(ArticleRefName){
+		return Content[Content.Sections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0]["RefName"]];
 	},
 	GetSectionRef : function(sectionID){
 		return Content.Sections[sectionID].RefName;
@@ -233,6 +247,12 @@ Content = {...Content,
 	GetArticleDisabled : function(sectionID,articleID){
 		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].Show : undefined;
 	},	
+	GetArticleNameByRef : function(refname,translationID){
+		var exists = this.GetArticleByRef(refname);
+		return typeof exists !== "undefined"
+				? Localization[exists[0]["RefName"]][translationID]
+				: undefined;
+	},
 	GetArticleName : function(sectionID,articleID,translationID){
 		return this.IndicesAreCorrect(sectionID,articleID,translationID) ? Localization[Content.Sections[sectionID].Articles[articleID].RefName][translationID] : undefined;
 	},
@@ -244,7 +264,7 @@ Content = {...Content,
 		var Articles = Content.Sections[sectionID].Articles;
 		console.log({ Articles });
 	},
-	GenerateLink : function(ArticleRefName,translationID,title,hash,innerHTML){
+	GenerateLink : function(ArticleRefName,translationID,title,hash,innerHTML,target){
 		var link = document.createElement("a");
 		var sectionID = Content.GetSectionID(Content.GetSectionByArticleRef(ArticleRefName).RefName);
 		var articleID = Content.GetArticleIDbyRef(ArticleRefName);
@@ -255,32 +275,24 @@ Content = {...Content,
 			return undefined;
 		}
 	},
-	GetLink : function(sectionID,articleID,translationID,title,hash,innerHTML){
+	GetLink : function(sectionID,articleID,translationID,title,hash,innerHTML,target){
 		var link = document.createElement("a");
 		var href = location.origin+location.pathname+"?s="+sectionID+"&a="+articleID;
 		if(!!hash){
 			href = href+"#"+hash;
 		}
+		link.setAttribute("href",href);
 		if(!!title){
 			link.setAttribute("title",title);
 		}
-
-		link.setAttribute("href",href);
-		if(this.IndicesAreCorrect(sectionID,articleID,translationID)){		
-			link.innerHTML = "";
-			if(typeof innerHTML != "undefined"){
-				if(typeof innerHTML == "string"){
-					link.innerHTML = innerHTML;
-				}else{
-					/*this may perhaps fail but i'll do sth when it happens*/
-					link.appendChild(innerHTML);
-				}
-			}
-			if(link.innerHTML == ""){
-				link.innerHTML = this.GetArticleName(sectionID,articleID,translationID);
-			}
-		}else{
-			console.error(`Link not working! ${link}`);
+		if(!!target){
+			link.setAttribute("target",target);
+		}
+		if(typeof innerHTML != "undefined"){
+			link.append(innerHTML);
+		}	
+		if(!this.IndicesAreCorrect(sectionID,articleID,translationID)){		
+			console.error(`Incorrect link IDs (${{link}}) in section ${sectionID} in ${Localization['LangName'][translationID]} article ${articleID}`);
 		}
 		return link;
 	},
