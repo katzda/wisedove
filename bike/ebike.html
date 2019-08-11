@@ -105,6 +105,10 @@
 		</style>
 		<script>
 			document.onload = Start();
+			function Start(){
+				ReDraw();
+				document.querySelector("canvas#canvasBatteryDesign").ondblclick = DrawMouseRuler;
+			}
 		</script>
 	</body>
 </html>
