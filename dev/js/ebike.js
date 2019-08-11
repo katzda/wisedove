@@ -210,7 +210,243 @@ function DrawMouseRuler(mouseEvt){
 	cxt.stroke();
 }
 
+function GetDesignUserInput(){
+	var table = document.querySelector("table.battery_design");
+	var xlimit = parseFloat(table.querySelector("input#inNumberBatteryXLimit").value);
+	return {
+		"diameter" : parseFloat(table.querySelector("input#inFloatDiameter").value),
+		"interSpacing" : parseFloat(table.querySelector("input#inNumberSpacing").value),
+		"xFrameOffset" : parseFloat(table.querySelector("input#inNumberOffset").value),
+		"batteryXLimit" : isNaN(xlimit) ? Number.MAX_VALUE : xlimit,
+		"frameAngle" : parseFloat(table.querySelector("input#inNumberAngle").value),
+		"parallelCount" : parseInt(table.querySelector("input#inNumberParallel").value),
+		"serialCount" : parseInt(table.querySelector("input#inNumberSerial").value),
+	}
+}
+
+function GenerateBattery(noParalel,noSeries){
+	let battery = [];
+	for(var i=0; i<noSeries; i++){
+		for(var j=0 ; j<noParalel ; j++){
+			let cell = {};
+			battery[i][j] = cell;
+			/*row, col*/
+		}
+	}
+	return BATTERY;
+}
+
+function PrecalcBatteryDesign(params){
+	//create battery object
+	var battery = GenerateBattery(params.parallelCount,params.serialCount);
+	//alias params
+	var d = params.diameter,
+		s = params.interSpacing,
+		xFrameOffset = params.xFrameOffset,
+		batteryXLimit = params.batteryXLimit,
+		frameAngle = params.frameAngle,
+		parallelCount = params.parallelCount,
+		serialCount = params.serialCount;
+	
+	//pre calculation
+	var alpha = Math.rad(frameAngle),
+		r = d/2,
+		rs = r+s,														//radius with spacing
+		h0 = rs/Math.tan(alpha/2),										//cell's offset for the first row based on angle
+		h1 = 1.7320508*rs+0.866025403;									//height of a single row
+		w1 = rs*2,														// width of a single column
+
+	function shift(lineNumber){
+		return lineNumber % 2 == 1 ? rs : 0;
+	};
+
+	function CalcCellsCenterPoint(row,col){	
+		//this is the cell's center Cx and Cy
+		var Hx = row*h1+h0,					// to the center
+			w = shift(row),					// shift
+			w0 = w+(rs*(col+1)),			// cell's offset for the first column based on row oddness
+			Wx = w0+(w1*col),				// to the center
+			C = {
+				"x" : Wx,
+				"y"	: Hx
+			};								//cells' center point
+			return C;
+	}
+	
+	var Px = 0,
+		Py = 0;
+		
+	function isOverlapping(Cx,Cy){
+		var CPx = Px - Cx,
+			CPy = Py - Cy,
+			CP_length = Math.sqrt(Math.pow(CPx,2)+Math.pow(CPy,2)),
+			R = Math.sqrt(Math.pow(CP_length,2)-Math.pow(rs,2)),
+			Beta = Math.atan(R/rs),
+			MC_length = Math.cos(Beta)*rs,
+			t = MC_length/CP_length,
+			Mx = Cx+t*CPx,
+			My = Cy+t*CPy,
+			MT_length = Math.sin(Beta)*rs,
+			MT2x = -CPy,
+			MT2y = CPx,
+			MT2_length = math.sqrt(Math.pow(MT2x,2)+Math.pow(MT2y,2)),
+			t2 = MT_length/MT2_length,
+			MTx = MT2x*t2,
+			MTy = MT2y*t2,
+			Tx = MTx + Mx,
+			Ty = MTy + My,
+			Alpha_needed = Math.atan(Tx/Ty);
+		return Alpha_needed > alpha;
+	}
+	
+	//Calc battery cells' general row and col positions
+	var row = 0,
+		col = 0;
+	for(var i=0 ; i<battery.length ; i++){
+		for(var j=0 ; i<battery[i].length ; j++){
+			position = CalcCellsCenterPoint(row,col);
+			if(isOverlapping(position.x,position.y)){
+				col = 0;
+				row++;
+			}
+			battery[i][j].position = CalcCellsCenterPoint(row,col);
+			battery[i][j].isPositive = i % 2 == 0;
+		}
+	}
+	
+	//post calculations
+	battery.H = row*h1+h0+rs;															//overall batter height
+	battery.W = (col+1)*(rs*2)+(col-1)+shift(row);										//overall battery width
+	battery.rows = row;
+	battery.cols = col;
+	
+	return battery;
+}
+
+function GetDrawingParams(){
+	var table = document.querySelector("table.battery_design"),
+		oMonitor = GetOPaper(),
+		oPaper = GetOPaper();
+	var batteryXLimit = parseFloat(table.querySelector("input#inNumberBatteryXLimit").value);
+	return {
+		"table" : table,
+		"oMonitor" : OMonitor,
+		"oPaper" : oPaper,
+		"canvasContext" : document.getElementById("canvasBatteryDesign").getContext("2d"),
+		"screenWidthMM" : parseFloat(document.getElementById("inNumberScreenWidth").value),
+		"screenHeightMM" : parseFloat(document.getElementById("inNumberScreenHeight").value),
+		"d" : parseFloat(table.querySelector("input#inFloatDiameter").value),
+		"voltage" : parseFloat(table.querySelector("input#inFloatVoltage").value),
+		"capacity" : parseFloat(table.querySelector("input#inFloatCapacity").value),
+		"s" : parseFloat(table.querySelector("input#inNumberSpacing").value),
+		"xFrameOffset" : parseFloat(table.querySelector("input#inNumberOffset").value),
+		"batteryXLimit" : isNaN(batteryXLimit) ? Number.MAX_VALUE : batteryXLimit,
+		"frameAngle" : parseFloat(table.querySelector("input#inNumberAngle").value),
+		"parallelCount" : parseInt(table.querySelector("input#inNumberParallel").value),
+		"serialCount" : parseInt(table.querySelector("input#inNumberSerial").value),
+		"xPPmm" : oMonitor.GetxPPmm(),
+		"yPPmm" : oMonitor.GetyPPmm()
+	}
+}
+
+function Draw(params){
+	function GetScreenPosition(battery){
+		var positive = true;
+		var Hb = H + r;
+		var Fb = Math.tan(frameAngle * Math.PI/180)*Hb;	//Frame boundary
+	}
+
+	DrawBattery(params);
+	DrawRuler(params);
+}
+
+function DrawBatery(params){
+	function GetScreenPosition(battery){
+		var positive = true;
+		var Hb = H + r;
+		var Fb = Math.tan(frameAngle * Math.PI/180)*Hb;	//Frame boundary
+	}
+
+	
+
+	canvasContext.strokeStyle = '#ff0000';
+	var parallelCounter = 0;
+	var allCells = serialCount * parallelCount;
+	
+	for(var cell = 0; cell < allCells;){
+	
+		canvasContext.strokeStyle = positive ? '#ff0000' : '#0000ff';	
+		var X = xPPmm * (n * (d + s) - r - s + shiftPX(line));		//X display coordinate for the centre of a battery cell cirlce
+		var Y = yPPmm * H;										//Y display coordinate for the centre of a battery cell circle
+		var radius = xPPmm*r;//this is wrong!
+		canvasContext.arc(X,Y,radius,0,2*Math.PI);
+		canvasContext.stroke();
+		canvasContext.beginPath();
+		if(positive){
+			canvasContext.strokeStyle = '#555555';
+			canvasContext.moveTo(X+radius-3,Y);
+			canvasContext.arc(X,Y,radius-3,0,2*Math.PI);
+			canvasContext.stroke();
+			canvasContext.beginPath();
+		}	
+		/*cross*/
+		canvasContext.moveTo(X-5,Y);
+		canvasContext.lineTo(X+5,Y);
+		canvasContext.moveTo(X,Y-5);
+		canvasContext.lineTo(X,Y+5);
+		canvasContext.stroke();
+		canvasContext.beginPath();
+		n++;
+		cell++;
+		parallelCounter++; 			
+		if(parallelCounter >= parallelCount){
+			parallelCounter = 0;
+			positive = !positive;	
+			canvasContext.strokeStyle = positive ? '#ff0000' : '#0000ff';	
+		}
+	}
+	canvasContext.beginPath();
+	canvasContext.moveTo(xFrameOffset*xPPmm, 0);
+	var Hb = H + r;
+	var Fb = Math.tan(frameAngle * Math.PI/180)*Hb;	//Frame boundary
+	canvasContext.strokeStyle = '#000000';
+	canvasContext.lineTo((Fb+xFrameOffset)*xPPmm,Hb*yPPmm);	//hypotenuse
+	canvasContext.stroke();
+	
+	canvasContext.beginPath();
+	canvasContext.strokeStyle = '#005500';
+	canvasContext.moveTo(0, Hb*yPPmm);	//Leg "width"
+	var height = maxHeight;
+	canvasContext.lineTo(height*xPPmm, Hb*yPPmm);	//Leg "width"
+	canvasContext.stroke();
+	canvasContext.beginPath();
+	canvasContext.moveTo(height*xPPmm, Hb*yPPmm);	//Leg "width"
+	canvasContext.lineTo(height*xPPmm, 0);	//Leg "width"
+	canvasContext.stroke();
+	
+	canvasContext.beginPath();
+	canvasContext.strokeStyle = '#000000';
+	canvasContext.moveTo(batteryXLimit*xPPmm, Hb*yPPmm);	//Battery X Limit
+	canvasContext.lineTo(batteryXLimit*xPPmm, 0);	//Leg "width"
+	canvasContext.stroke();
+
+	canvasContext.beginPath();
+	canvasContext.fillStyle = '#000000';
+	canvasContext.font="30px Arial bold";
+	canvasContext.fillText("Battery parameters:",400,50);
+	canvasContext.fillText("Number of cells: "+serialCount*parallelCount,650,50);
+	canvasContext.fillText("Voltage: "+Math.round(voltage*serialCount*10)/10.0+" V",650,80);
+	canvasContext.fillText("Capacity: "+Math.round(capacity*parallelCount*10)/10.0+" Ah",650,110);
+	canvasContext.fillText("Dimensions:",400,200);
+	canvasContext.fillText("height:  " + Math.round(height)/10.0+" cm",650,200);
+	canvasContext.fillText("length: " + Math.round(Hb)/10.0+" cm",650,230);
+	canvasContext.fillText("hypotenuse: " + Math.round(Math.sqrt(Fb*Fb+Hb*Hb))/10.0+" cm",650,260);
+}
+
+
 function DrawBateryDesign(canvas,oMonitor){
+
+	
 	var table = document.querySelector("table.battery_design");
 	var canvasContext = document.getElementById("canvasBatteryDesign").getContext("2d");
 	var screenWidthMM = parseFloat(document.getElementById("inNumberScreenWidth").value);
@@ -248,6 +484,7 @@ function DrawBateryDesign(canvas,oMonitor){
 	var Wcprev = 0;
 	var Hb = H + r;
 	var positive = true;
+	var noCells = [];
 	for(var cell = 0; cell < allCells;){
 		if(n > N){
 			n = 1;
@@ -370,14 +607,14 @@ function DrawRuler(canvas,oPaper,oMonitor){
 				y1 = 0;
 				x2 = i*xPPmm;
 				y2 = 10;
-				ctx.fillText(Math.floor(i/10),i*xPPmm-6,-1);
+				ctx.fillText(Math.floor(i/10),i*xPPmm-6,15);
 			}else{
 				if(cm){
 					x1 = i*xPPmm;
 					y1 = 0;
 					x2 = i*xPPmm;
 					y2 = 10;
-					ctx.fillText((i/10)%10,i*xPPmm-3,-1);
+					ctx.fillText((i/10)%10,i*xPPmm-3,10);
 				}else{
 					if(mm5){
 						x1 = i*xPPmm;
@@ -417,14 +654,14 @@ function DrawRuler(canvas,oPaper,oMonitor){
 				y1 = i*yPPmm;
 				x2 = 10;
 				y2 = i*yPPmm;
-				ctx.fillText(Math.floor(i/10),-12,i*yPPmm+3);
+				ctx.fillText(Math.floor(i/10),12,i*yPPmm+3);
 			}else{
 				if(cm){
 					x1 = 0;
 					y1 = i*yPPmm;
 					x2 = 10;
 					y2 = i*yPPmm;
-					ctx.fillText((i/10)%10,-7,i*yPPmm+3);
+					ctx.fillText((i/10)%10,7,i*yPPmm+3);
 				}else{
 					if(mm5){
 						x1 = 0;

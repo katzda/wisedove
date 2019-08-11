@@ -8,6 +8,10 @@
 		top: 0px;
 	}
 	
+	svg#DoveLogo {
+		--svgSize: 100px;
+	}
+	
 	a.menuitem {
 		text-decoration: none;
 		color: #ac9268;

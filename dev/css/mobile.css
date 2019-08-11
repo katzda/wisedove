@@ -18,7 +18,7 @@ h1 {
     width: auto;
     display: inline-block;
 }
-.article .otherInfo {
+.article .meta {
 	font-size: 18px;
     vertical-align: top;
     color: burlywood;
@@ -54,9 +54,12 @@ span.otherInfo > span {
     top: -27px;
     min-height: 70px;
 }
+span.author:after {
+    content: ", ";
+}
 section#header {    
     background: linear-gradient( rgb(182, 205, 255) 0px, rgb(230, 244, 255) 100%);
-	height: 100px;
+	min-height: 150px;
 }
 section#menu{
 	background: linear-gradient(rgb(230, 244, 255) 0px, rgb(60, 80, 38) 5px, hsla(34, 50%, 36%, 0.77) 37px, hsl(34, 26%, 29%) 95%, hsl(0, 3%, 50%) 100%);
@@ -87,6 +90,14 @@ a.menuitem.selected{
 .categories {
     padding-top: 10px;
 }
+svg#DoveLogo {
+    --svgSize: 70px;
+    width: var(--svgSize);
+    height: var(--svgSize);    
+    top: 30px;
+    left: 15px;
+    box-shadow: -2px 0px 0px #dde9ff;
+}
 .webheadline {
     position: relative;
     z-index: 0;
@@ -95,7 +106,7 @@ a.menuitem.selected{
     font-size: 20pt;
     padding: 1px 5px;
     top: 0px;
-    background: rgb(218, 233, 249);
+    /*background: rgb(218, 233, 249);*/
     color: #dae6f5;
     text-shadow: 1px 1px 1px #a1b7e4, -1px -1px 1px #a1b7e4;
     white-space: nowrap;
@@ -105,10 +116,20 @@ a.menuitem.selected{
 	text-decoration: none;
     color: aliceblue;
 }
+.webmotto.begin{
+	color: hsla(220, 87%, 81%, 1);
+    top: 50px;
+    font-size: 18px;
+}
 .webmotto {
-    display: inline-block;
-    font-family: Georgia, serif;
-    color: hsl(220, 87%, 81%);
+	display: inline-block;
+    color: hsla(220, 87%, 81%, 0);
+    --fn: cubic-bezier(0.26, 0.82, 0.05, 1);
+    --dur: 1s;
+    text-shadow: none;
+    transition: color var(--dur) var(--fn), top var(--dur) var(--fn), font-size var(--dur) var(--fn);
+    top: 0;
+    position: absolute;
 }
 .lang {
     color: #5f6f8d;

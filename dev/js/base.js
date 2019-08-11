@@ -5,13 +5,13 @@ function Configure(){
 	Server.AddWebPart("Change",page.ChangeWebTitle,Content.GetSectionRef(page.GetSectionID()));
 	Server.AddWebPart("Change",page.ChangeWebMotto,["WebMotto",0,Content["motto"]-1,10,20],".webmotto",true);
 	Server.AddWebPart("Change",page.ChangeWebHeadline,"WebHeadline",".webheadline");
-	Server.AddWebPart("Change",page.ReCreateListOfSections,Localization.Languages,"menu");
+	Server.AddWebPart("Change",page.ReCreateListOfSections,Localization.Languages,"#menu");
 	Server.AddWebPart("Change",page.GetMainPageContent,null,".partB");
 	Server.AddWebPart("Change",page.ReCreateWebflags,Localization.Languages,".webflags");
 	Server.AddWebPart("Change",page.UpdateLinks);
 	Server.AddWebPart("CreatePage",page.StartWebMotto,["WebMotto",0,Content["motto"]-1,10000,20000],".webmotto");
 	Server.AddWebPart("CreatePage",page.ReCreateWebflags,Localization.Languages,".webflags");
-	Server.AddWebPart("CreatePage",page.ReCreateListOfSections,Localization.Languages,"menu");
+	Server.AddWebPart("CreatePage",page.ReCreateListOfSections,Localization.Languages,"#menu");
 	Server.AddWebPart("CreatePage",page.GetMainPageContent,null,".partB");
 	Server.AddWebPart("CreatePage",page.ChangeWebHeadline,"WebHeadline",".webheadline");
 	Server.AddWebPart("CreatePage",page.HideOnlineArticleLink,null,"#footer>a");
@@ -20,8 +20,16 @@ function Configure(){
 	Content.SetArticleDisabled(Content["3_Krishna"],1,false);
 	
 	document.addEventListener("FileLoaded",page.UpdateLinks,false);
+	
+	
+	document.addEventListener('touchstart', handleTouchStart, false);        
+	document.addEventListener('touchmove', handleTouchMove, false);
+	document.querySelector(".webmotto").addEventListener("transitionend",function(){this.classList.remove("begin");})
 }
 
+/*todo: rename all articles to normal names, keep IDs internal, use refnames, same with folders
+  generate the powershell script that will generate the data structure
+*/
 
 
 /*User handler*/
@@ -41,7 +49,7 @@ function WiseDove(){
 		var sections = Content.GetSections(page.GetSelectedLanguageID(),page.GetExclusively()).map((o,i) => ({"secID":Content.GetSectionID(o.RefName),...o}));
 		if(menuItems.length != sections.length){
 			menuItems = [];
-			var elem = document.getElementById(selector);
+			var elem = document.querySelector(selector);
 			elem.innerHTML = "";
 			var sectionNames = document.createElement("div");
 			sectionNames.classList.add("categories");
@@ -101,13 +109,9 @@ function WiseDove(){
 	}
 	this.ChangeWebHeadline = function(refName,selector){
 		var elem = document.querySelector(selector);
-		var a = elem.querySelector("a");
-		if(!a){
-			a = document.createElement("a");
-			a.setAttribute("href",location.origin + location.pathname);
-			elem.appendChild(a);
+		if(elem.parentElement.tagName != "a"){
+			$(elem).wrap(`<a href="${location.origin}${location.pathname}"></a>`);
 		}
-		a.innerHTML = Localization[refName][page.GetSelectedLanguageID()];
 	}
 	var stopWebMotto = false;
 	this.StopWebMotto = function(){
@@ -136,7 +140,10 @@ function WiseDove(){
 		var textRef = data[0]+numberRef;
 		elem.innerHTML = Localization[textRef][page.GetSelectedLanguageID()];
 		if(!stopWebMotto && !skip){
-			setTimeout(that.ChangeWebMotto,data[3]+Math.random()*(data[4]-data[3]),data,selector);
+			var dur = Number.parseInt(data[3]+Math.random()*(data[4]-data[3]));
+			setTimeout(that.ChangeWebMotto,dur,data,selector);
+			elem.style.setProperty("--dur",`${dur}ms`);
+			elem.classList.add("begin");
 		}
 	}
 	this.ReCreateWebflags = function(data,selector){
@@ -360,12 +367,18 @@ function WiseDove(){
 	}
 	this.GetMainPageContent = function(data,contentSelector){
 		that.LoadingIcon.Reset();
-		var exists = document.querySelector(contentSelector).innerHTML="";
+		document.querySelector(contentSelector).innerHTML="";
 		var sectionID = page.GetSectionID();
 		var articleID = page.GetSectionArticleID();
 		var onlyLeads = isNaN(articleID);
 		var langID = page.GetSelectedLanguageID();
 		var excl = page.GetExclusively();
+		var exists = Content.IndicesAreCorrect(sectionID,articleID);
+		if(!exists){
+			var elem = document.querySelector(contentSelector);
+			elem.innerHTML = Localization["WrongURL"][langID];
+			return;
+		}
 		var allArticles = onlyLeads /*true == articleID is not defined*/ 
 						? Content.GetArticles(sectionID,langID,excl).map(function(o,i){
 								var id = Content.GetArticleIDbyRef(o.RefName,sectionID);
@@ -470,13 +483,15 @@ function WiseDove(){
 				divArticle.appendChild(h1);
 			}
 			divArticle.appendChild(divLead);
-			var index = elem.BinaryInsert(divArticle,function(A,B){
+			var index = elem.InsertSort(divArticle,function(A,B){
 				/*comparator*/
-				var iA = Number.parseInt(A.id.split("_")[1]);
-				var iB = Number.parseInt(B.id.split("_")[1]);
-				if(iA<iB) return 1; else if(iA==iB) return 0; else return -1;
+				var rA = A.querySelector(".link").dataset["refname"];
+				var rB = B.querySelector(".link").dataset["refname"];
+				var yA = Content.GetArticleByRef(rA)[0].Date;
+				var yB = Content.GetArticleByRef(rB)[0].Date;
+				if(yA < yB) return 1; else if(yA==yB) return 0; else return -1;
 			});
-			console.log(Array.from(elem.children).toString(function(child){
+			console.info(Array.from(elem.children).toString(function(child){
 				return child.id;
 			}));
 		}

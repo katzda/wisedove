@@ -6,7 +6,6 @@ var Server = {
 		}
 		Server[groupName][Server[groupName].length] = function(){fn(data,selector,multiSelect);};
 	},
-
 	RunGroup : function(groupName){
 		Server[groupName].forEach(function(elem){
 			elem();
@@ -45,6 +44,7 @@ var Localization = {
 	"LangName0adjHE" : ["english","anglický"],
 	"LangName1adjSHE" : ["czech","česká"],
 	"LangName1adjHE" : ["czech","český"],
+	"WrongURL" : ["No target matches the given URL!","Zadaný odkaz neodpovídá žádnému výsledku!"],
 	"Date" : ["Date","Datum"],
 	"Author" : ["Author","Autor"],
 	"linkWarning" : ["Note: This article has not been created in the $1 language! You may, however, try to unselect the $2 tickbox in settings.",
@@ -86,16 +86,16 @@ var Localization = {
 
 var Content = {
 	"Sections":[
-		{RefName:"1_Intro",Show:true,Articles:[{RefName:"Intro",Show:true,Translations:[true,true],Date:"",Author:"DKz"}]},
+		{RefName:"1_Intro",Show:true,Articles:[{RefName:"Intro",Show:true,Translations:[true,true],Date:2018,Author:"DKz"}]},
 		{RefName:"2_Christ",Show:true,Articles:[
 			{RefName:"Dating",Show:true,Translations:[false,true],Date:2007,Author:"DKz"},
 			{RefName:"Dating2",Show:true,Translations:[false,true],Date:2009,Author:"DKz"},
 			{RefName:"Passion",Show:true,Translations:[false,true],Date:2014,Author:"DKz"},
 			{RefName:"OTvsNT",Show:true,Translations:[false,true],Date:2013,Author:"DKz"},
 			{RefName:"Love",Show:true,Translations:[true,true],Date:2018,Author:"DKz"},
-			{RefName:"Stuff",Show:true,Translations:[true,false],Date:2018,Author:"DKz"}]
+			{RefName:"Stuff",Show:true,Translations:[false,false],Date:2018,Author:"DKz"}]
 		},
-		{RefName:"3_Krishna",Show:true,Articles:[{RefName:"KrishnaMeat",Show:true,Translations:[true,false],Date:2018,Author:"DKz"},{RefName:"KrishnaDevil",Show:true,Translations:[true,false],Date:2018,Author:"DKz"}]},
+		{RefName:"3_Krishna",Show:true,Articles:[{RefName:"KrishnaMeat",Show:true,Translations:[true,false],Date:2018,Author:"DKz"},{RefName:"KrishnaDevil",Show:true,Translations:[false,false],Date:2018,Author:"DKz"}]},
 		{RefName:"4_Muslims",Show:true,Articles:[{RefName:"ReligionMuslim",Show:true,Translations:[true,false],Date:2018,Author:"DKz"}]},
 		{RefName:"5_Nofaith",Show:true,Articles:[{RefName:"GoodNews",Show:true,Translations:[false,true],Date:2018,Author:"DKz"},{RefName:"ACell",Show:true,Translations:[false,true],Date:2018,Author:"DKz"},{RefName:"FaithIsChoice",Show:true,Translations:[true,true],Date:2017,Author:"DKz"},{RefName:"Coincidence",Show:true,Translations:[false,true],Date:2012,Author:"DKz"}]}
 	],
@@ -146,7 +146,7 @@ Content = {...Content,
 		return Content[Content.Sections.filter((o,i) => o.Articles.filter((o,i)=>o.RefName.toUpperCase() == ArticleRefName.toUpperCase(),ArticleRefName).length > 0 ,ArticleRefName)[0]["RefName"]];
 	},
 	GetSectionRef : function(sectionID){
-		return Content.Sections[sectionID].RefName;
+		return this.IndicesAreCorrect(sectionID) ? Content.Sections[sectionID].RefName : undefined;
 	},
 	GetSectionID : function(sectionRefName){
 		return Content[sectionRefName];
@@ -224,7 +224,7 @@ Content = {...Content,
 		}) : undefined;
 	},
 	GetArticleRefName : function(sectionID,articleID){
-		return this.IndicesAreCorrect(sectionID) ? Content.Sections[sectionID].Articles[articleID].RefName : undefined;
+		return this.IndicesAreCorrect(sectionID,articleID) ? Content.Sections[sectionID].Articles[articleID].RefName : undefined;
 	},
 	GetTranslationExists : function(sectionID,articleID,translationID){
 		if(this.IndicesAreCorrect(sectionID,articleID,translationID)){
