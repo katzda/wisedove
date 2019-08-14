@@ -62,8 +62,6 @@
 			<tr><td><label for="inFloatDiameter">Cell Diameter:</label></td><td><input type="number" id="inFloatDiameter" value="18.5" step="0.1" onchange="ReDraw()"/></td><td>[mm]</td></tr>
 			<tr><td>Cell Voltage:</td><td><input type="number" id="inFloatVoltage" value="3.7" step="0.1" onchange="ReDraw()"/></td><td>[V]</td></tr>
 			<tr><td>Cell Capacity:</td><td><input type="number" id="inFloatCapacity" value="3.5" step="0.1" onchange="ReDraw()"/></td><td>[Ah]</td></tr>
-			<tr><td><label for="inNumberOffset">X offset:</label></td><td><input type="number" id="inNumberOffset" value="17" onchange="ReDraw()"/></td><td>[mm]</td></tr>
-			<tr><td><label for="inNumberBatteryXLimit">X limit:</label></td><td><input type="number" id="inNumberBatteryXLimit" value="268" onchange="ReDraw()"/></td><td>[mm]</td></tr>
 			<tr><td><label for="inNumberSpacing">Spacing:</label></td><td><input type="number" id="inNumberSpacing" value="0" onchange="ReDraw()" step="0.01"/></td><td>[mm]</td></tr>
 			<tr><td><label for="inTextAngle">Frame angle:</label></td><td><input type="number" id="inNumberAngle" value="39.1" onchange="ReDraw()" step="0.1"/></td><td>[°]</td></tr>
 			<tr><td><label for="inNumberParallel">Parallel cells count:</label></td><td><input type="number" id="inNumberParallel" value="20" onchange="ReDraw()"/></td><td></td></tr>
@@ -74,6 +72,10 @@
 			table {
 				display: inline-block;
 				vertical-align: top;
+				border-collapse: collapse;
+			}
+			table tbody{
+				background-color: white;
 			}
 			tr:first-child{
 				font-weight: bold;
@@ -97,9 +99,13 @@
 			}
 			table.battery_design {
 				position: sticky;
-				float: right;
 				height: 0px;
 				top: 0px;
+				left: 950px;
+			}
+			canvas{
+				position: relative;
+				top: -40px;
 			}
 		</style>
 		<script>
