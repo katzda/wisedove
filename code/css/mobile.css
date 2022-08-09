@@ -1,0 +1,198 @@
+body, html {
+    margin: 0%;
+    min-height: 100vh;
+    height: 100%;
+    color: #404040;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 21px;
+    text-shadow: 1px 1px 0px black;
+}
+html.loading * {
+    cursor: wait;
+}
+*:not(a) {
+    cursor: default;
+}
+h1 {
+	margin: auto;
+    width: auto;
+    display: inline-block;
+}
+.article .meta {
+	font-size: 18px;
+    vertical-align: top;
+    color: burlywood;
+    width: 100%;
+    display: inline-block;
+    padding: 10px 20px;
+}
+span.otherInfo > span {
+    margin-right: 10px;
+}
+.lead>p {
+    margin: 0px;
+    padding: 0px 20px;
+}
+.partA {
+    position: sticky;
+    top: -106px;
+    z-index: 2;
+}
+.partB{
+	background: linear-gradient(hsla(0, 6%, 35%, 0.72),hsla(0, 6%, 35%, 0.72)), url(../img/rockywall.png);
+    position: relative;
+    width: -webkit-fill-available;
+    min-height: 100%;
+	/*
+    top: -27px;
+    padding: 0px 0px 1px;
+	*/
+}
+.partC {
+    background: linear-gradient(hsl(0, 3%, 51%) 0px,hsla(30, 65%, 64%, 0.85) 15px, rgba(255, 63, 0, 0)),url(../img/lava.png);
+    position: relative;
+    top: -27px;
+    min-height: 70px;
+}
+span.author:after {
+    content: ", ";
+}
+section#header {    
+    background: linear-gradient( rgb(182, 205, 255) 0px, rgb(230, 244, 255) 100%);
+	min-height: 150px;
+}
+section#menu{
+	background: linear-gradient(rgb(230, 244, 255) 0px, rgb(60, 80, 38) 5px, hsla(34, 50%, 36%, 0.77) 37px, hsl(34, 26%, 29%) 95%, hsl(0, 3%, 50%) 100%);
+	height:60px;
+    text-align: center;
+}
+a.menuitem {
+    text-decoration: none;
+    color: #ac9268;
+    font-size: 20pt;
+    white-space: nowrap;
+    text-shadow: 1px 1px 1px black;
+    padding: 0px 15px;
+}
+a.menuitem.selected{
+	color: #5c6e04;
+    font-size: 40px;
+    padding: 0px;
+}
+
+.article a {
+    color: darkgoldenrod;
+    text-shadow: 1px 1px 1px black;
+}
+.article{
+	padding: 8px;
+}
+.categories {
+    padding-top: 10px;
+}
+svg#DoveLogo {
+    --svgSize: 70px;
+    width: var(--svgSize);
+    height: var(--svgSize);    
+    top: 30px;
+    left: 15px;
+    box-shadow: -2px 0px 0px #dde9ff;
+}
+.webheadline {
+    position: relative;
+    z-index: 0;
+    border-radius: 100px;
+    display: inline-block;
+    font-size: 20pt;
+    padding: 1px 5px;
+    top: 0px;
+    /*background: rgb(218, 233, 249);*/
+    color: #dae6f5;
+    text-shadow: 1px 1px 1px #a1b7e4, -1px -1px 1px #a1b7e4;
+    white-space: nowrap;
+}
+
+.webheadline>a{
+	text-decoration: none;
+    color: aliceblue;
+}
+.webmotto.begin{
+	color: hsla(220, 87%, 81%, 1);
+    top: 50px;
+    font-size: 18px;
+}
+.webmotto {
+	display: inline-block;
+    color: hsla(220, 87%, 81%, 0);
+    --fn: cubic-bezier(0.26, 0.82, 0.05, 1);
+    --dur: 1s;
+    text-shadow: none;
+    transition: color var(--dur) var(--fn), top var(--dur) var(--fn), font-size var(--dur) var(--fn);
+    top: 0;
+    position: absolute;
+}
+.lang {
+    color: #5f6f8d;
+    font-weight: bolder;
+    width: 40px;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+}
+section#menu > * {
+	overflow-x: auto;
+}
+.webflags {
+}
+.webflags>.sel {
+    position: absolute;
+    right: 50px;
+    width: max-content;
+}
+.webcontent {
+    padding: 0px 3%;
+}
+.sel>.checkbox_exclusive, .sel>select {
+    margin-left: auto;
+}
+.sel>select{
+	width: 40px;
+    border: 2px solid #bcd2ff;
+	background: transparent;
+	color: #566470;
+}
+.checkbox_exclusive>input#exclChbox {
+    vertical-align: bottom;
+}
+.checkbox_exclusive>label {
+    color: #566470;
+}
+.help>.text{
+	display: none;
+}
+.webflags .help {
+    border-radius: 100px;
+    width: 23px;
+    height: 23px;
+    text-align: center;
+    background: #aecdf6;
+    color: #6883a8;
+}
+.help>.text.tooltip {
+    display: inline-block;
+    position: absolute;
+    min-width: 293px;
+    width: 25%;
+    max-width: 400px;
+    top: -12px;
+    right: 5%;
+    background: #97b4d2;
+    box-shadow: 4px 4px 6px #97b4d2, -4px -4px 6px #97b4d2;
+    border-radius: 35%;
+    /* min-height: 67px; */
+    padding: 15px 23px;
+}
+/*articles*/
+.invisible{
+	display: none;
+}

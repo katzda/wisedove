@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>210</y>
+      <w>310</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>Page
+--
+RegisterFunction(name:str,handler:function)
+AddPageType(fn,data,selector,multiSelect)
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>400</x>
+      <y>20</y>
+      <w>400</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>ActivityDiagram
+--
+- First I register a page type
+- This gets inserted under JSON_Str_ID-&gt;array
+- Then I can call Page.Reload(JSON-Str_Id) to call all handlers
+  for the given pageType</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>50</x>
+      <y>30</y>
+      <w>220</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>ActionType
+--
+fn : handler
+staticData : object
+selector : staticSelector
+multiSelect : bool
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>150</x>
+      <y>130</y>
+      <w>30</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-&gt;&gt;&gt;&gt;&gt;
+m1=*
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
+  </element>
+</diagram>

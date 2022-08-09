@@ -1,0 +1,38 @@
+@media only screen and (min-width: 800px) {
+	body,html {
+	}
+	
+	.webheadline {
+		font-size: 30pt;
+		padding: 1px 12px;
+		top: 0px;
+	}
+	
+	svg#DoveLogo {
+		--svgSize: 100px;
+	}
+	
+	a.menuitem {
+		text-decoration: none;
+		color: #ac9268;
+		font-size: 25pt;
+		white-space: nowrap;
+		text-shadow: 1px 1px 1px black;
+		padding: 0px 15px;
+	}
+	
+	.webmotto {
+		font-size: 18pt;
+		top: 72px;
+	}
+	.webheadline:before {
+		height: 85px;
+	}
+	.webheadline:after {
+		height: 85px;
+	}
+	
+	.article{
+		padding: 15px;
+	}
+}
